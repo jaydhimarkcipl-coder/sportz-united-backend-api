@@ -2,19 +2,24 @@ const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/database');
 
 const ArenaAmenity = sequelize.define('ArenaAmenity', {
-    ArenaAmenitiesId: {
+    arenaAmenitiesId: {
         type: DataTypes.INTEGER,
         primaryKey: true,
-        autoIncrement: true
+        autoIncrement: true,
+        field: 'ArenaAmenitiesId'
     },
-    ArenaId: {
-        type: DataTypes.INTEGER
+    arenaId: {
+        type: DataTypes.INTEGER,
+        field: 'ArenaId'
     },
-    AmenityId: {
-        type: DataTypes.INTEGER
+    amenityId: {
+        type: DataTypes.INTEGER,
+        field: 'AmenityId'
     },
-    IsActive: {
-        type: DataTypes.BOOLEAN
+    isActive: {
+        type: DataTypes.BOOLEAN,
+        field: 'IsActive',
+        defaultValue: true
     }
 }, {
     tableName: 'tblArenaAmenities',

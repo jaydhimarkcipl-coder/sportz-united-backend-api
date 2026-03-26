@@ -2,35 +2,39 @@ const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/database');
 
 const Amenity = sequelize.define('Amenity', {
-    AmenityId: {
+    amenityId: {
         type: DataTypes.INTEGER,
         primaryKey: true,
-        autoIncrement: true
+        autoIncrement: true,
+        field: 'AmenityId'
     },
-    Name: {
-        type: DataTypes.STRING(100)
+    name: {
+        type: DataTypes.STRING(100),
+        field: 'Name'
     },
-    IconUrl: {
-        type: DataTypes.STRING(255)
+    isActive: {
+        type: DataTypes.BOOLEAN,
+        field: 'IsActive',
+        defaultValue: true
     },
-    IsActive: {
-        type: DataTypes.BOOLEAN
+    isDelete: {
+        type: DataTypes.BOOLEAN,
+        field: 'IsDelete',
+        defaultValue: false
     },
-    IsDelete: {
-        type: DataTypes.BOOLEAN
-    },
-    CreatedDate: {
+    createdDate: {
         type: DataTypes.DATE,
-        defaultValue: DataTypes.NOW
+        field: 'CreatedDate',
+        allowNull: true
     },
-    ModifiedDate: {
-        type: DataTypes.DATE
+    modifiedDate: {
+        type: DataTypes.DATE,
+        field: 'ModifiedDate',
+        allowNull: true
     }
 }, {
     tableName: 'tblAmenities',
-    timestamps: true,
-    createdAt: 'CreatedDate',
-    updatedAt: 'ModifiedDate'
+    timestamps: false
 });
 
 module.exports = Amenity;

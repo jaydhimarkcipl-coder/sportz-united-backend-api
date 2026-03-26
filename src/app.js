@@ -23,6 +23,8 @@ const adminNotifRoutes = require('./routes/admin/notification.routes');
 const superSportRoutes = require('./routes/super-admin/sport.routes');
 const superUserRoutes = require('./routes/super-admin/user.routes');
 const sportRoutes = require('./routes/user/sport.routes');
+const superAmenityRoutes = require('./routes/super-admin/amenity.routes');
+const adminArenaAmenityRoutes = require('./routes/admin/arena-amenity.routes');
 
 // Import error handler
 const errorHandler = require('./middlewares/error.middleware');
@@ -61,6 +63,8 @@ app.use('/api/courts', courtRoutes); // Using courtRoutes for slot fetching
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/super-admin/amenities', superAmenityRoutes);
+app.use('/api/admin/arenas', adminArenaAmenityRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

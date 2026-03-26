@@ -12,12 +12,15 @@ router.use(allowRoles('super_admin', 'arena_owner'));
 router.use(requireArenaOwnership);
 
 const promoSchema = Joi.object({
-    code: Joi.string().required(),
+    code: Joi.string().uppercase().required(),
     discountType: Joi.string().valid('percentage', 'flat').required(),
-    discountValue: Joi.number().required(),
-    expiryDate: Joi.date().required(),
-    usageLimit: Joi.number().integer().min(1),
-    arenaId: Joi.number()
+    discountValue: Joi.number().positive().required(),
+    minBookingAmount: Joi.number().default(0),
+    maxDiscount: Joi.number().optional(),
+    usageLimit: Joi.number().integer().min(1).optional(),
+    validFrom: Joi.date().iso().optional(),
+    validUntil: Joi.date().iso().optional(),
+    arenaId: Joi.number().optional()
 });
 
 /**
@@ -33,13 +36,16 @@ const promoSchema = Joi.object({
  *         application/json:
  *           schema:
  *             type: object
- *             required: [code, discountType, discountValue, expiryDate]
+ *             required: [code, discountType, discountValue]
  *             properties:
- *               code: { type: string }
+ *               code: { type: string, example: "SUMMER20" }
  *               discountType: { type: string, enum: [percentage, flat] }
- *               discountValue: { type: number }
- *               expiryDate: { type: string, format: date }
- *               usageLimit: { type: integer }
+ *               discountValue: { type: number, example: 100 }
+ *               minBookingAmount: { type: number, example: 500 }
+ *               maxDiscount: { type: number, example: 200 }
+ *               usageLimit: { type: integer, example: 50 }
+ *               validFrom: { type: string, format: date }
+ *               validUntil: { type: string, format: date }
  *               arenaId: { type: integer }
  *     responses:
  *       201:

@@ -42,16 +42,16 @@ class ArenaRepository {
         });
         arenaJson.Sports = Array.from(sportsSet);
 
-        // Aggregate BasePrice (min)
+        // Aggregate BasePrice (min of non-zero prices)
         let minPrice = null;
         courts.forEach(c => {
-            const prices = (c.CourtSlots || []).map(s => parseFloat(s.BasePrice)).filter(p => !isNaN(p));
+            const prices = (c.CourtSlots || []).map(s => parseFloat(s.BasePrice)).filter(p => !isNaN(p) && p > 0);
             if (prices.length > 0) {
                 const localMin = Math.min(...prices);
                 if (minPrice === null || localMin < minPrice) minPrice = localMin;
             }
         });
-        arenaJson.BasePrice = minPrice;
+        arenaJson.BasePrice = minPrice || 0;
 
         // Keep courts list but clean up nested slots
         arenaJson.Courts = courts.map(c => ({
@@ -89,8 +89,8 @@ class ArenaRepository {
             const distanceLiteral = sequelize.literal(`
                 (6371 * acos(cos(radians(${parseFloat(lat)})) * cos(radians(Latitude)) * cos(radians(Longitude) - radians(${parseFloat(lng)})) + sin(radians(${parseFloat(lat)})) * sin(radians(Latitude))))
             `);
-            attributes.include.push([distanceLiteral, 'distance']);
-            
+            attributes.include.push([distanceLiteral, 'Distance']);
+
             // Note: Sequelize doesn't allow using aliases in WHERE for some dialects, 
             // but we can use having or filter in JS. For MSSQL/Sequelize, we might need a literal in where too.
             if (maxDistance) {
@@ -106,11 +106,11 @@ class ArenaRepository {
                 required: false,
                 include: [
                     { model: Sport, attributes: ['Name'] },
-                    { 
-                        model: CourtSlot, 
-                        attributes: ['BasePrice', 'StartTime', 'DayName'], 
+                    {
+                        model: CourtSlot,
+                        attributes: ['BasePrice', 'StartTime', 'DayName'],
                         required: false,
-                        where: {} 
+                        where: {}
                     }
                 ]
             }
@@ -154,13 +154,13 @@ class ArenaRepository {
             });
         }
 
-        let arenas = await Arena.findAll({ where, include, attributes, order: lat && lng ? [[sequelize.literal('distance'), 'ASC']] : [] });
+        let arenas = await Arena.findAll({ where, include, attributes, order: lat && lng ? [[sequelize.literal('Distance'), 'ASC']] : [] });
 
         // 6. Post-process & Price Range Filter
         let results = arenas.map(arena => {
             const arenaJson = arena.toJSON();
             const courts = arenaJson.Courts || [];
-            
+
             const sportsSet = new Set();
             courts.forEach(c => {
                 if (c.Sport && c.Sport.Name) sportsSet.add(c.Sport.Name);
@@ -169,16 +169,16 @@ class ArenaRepository {
 
             let minPrice = null;
             courts.forEach(c => {
-                const prices = (c.CourtSlots || []).map(s => parseFloat(s.BasePrice)).filter(p => !isNaN(p));
+                const prices = (c.CourtSlots || []).map(s => parseFloat(s.BasePrice)).filter(p => !isNaN(p) && p > 0);
                 if (prices.length > 0) {
                     const localMin = Math.min(...prices);
                     if (minPrice === null || localMin < minPrice) minPrice = localMin;
                 }
             });
-            arenaJson.BasePrice = minPrice;
-            
-            if (arenaJson.distance) {
-                arenaJson.distance = parseFloat(parseFloat(arenaJson.distance).toFixed(2));
+            arenaJson.BasePrice = minPrice || 0;
+
+            if (arenaJson.Distance) {
+                arenaJson.Distance = parseFloat(parseFloat(arenaJson.Distance).toFixed(2));
             }
 
             delete arenaJson.Courts;

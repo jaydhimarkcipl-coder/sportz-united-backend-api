@@ -1,55 +1,97 @@
-const fs = require('fs');
-const path = require('path');
-
-const dataPath = path.join(__dirname, '../../../data');
-if (!fs.existsSync(dataPath)) {
-    fs.mkdirSync(dataPath, { recursive: true });
-}
-const promosFile = path.join(dataPath, 'promos.json');
+const { PromoCode } = require('../../models');
+const { Op } = require('sequelize');
 
 class PromoRepository {
-    constructor() {
-        if (!fs.existsSync(promosFile)) {
-            fs.writeFileSync(promosFile, JSON.stringify([]));
-        }
-    }
-
-    _readData() {
-        const raw = fs.readFileSync(promosFile);
-        return JSON.parse(raw);
-    }
-
-    _writeData(data) {
-        fs.writeFileSync(promosFile, JSON.stringify(data, null, 2));
-    }
-
-    createPromo(arenaId, promoData) {
-        const promos = this._readData();
-        const newPromo = {
-            id: Date.now().toString(),
-            arenaId,
-            ...promoData,
-            createdAt: new Date().toISOString()
+    async createPromo(arenaId, promoData) {
+        console.log('--- Creating Promo ---');
+        console.log('Raw data:', promoData);
+        // Ensure dates are either a valid YYYY-MM-DD string or null
+        const parseDate = (d) => {
+            if (!d) return null;
+            const date = new Date(d);
+            if (isNaN(date.getTime())) return null;
+            return date.toISOString().split('T')[0];
         };
-        promos.push(newPromo);
-        this._writeData(promos);
-        return newPromo;
+
+        const validFrom = parseDate(promoData.validFrom);
+        const validUntil = parseDate(promoData.validUntil);
+        console.log('Parsed dates:', { validFrom, validUntil });
+
+        return await PromoCode.create({
+            ArenaId: arenaId,
+            Code: (promoData.code || '').toUpperCase(),
+            DiscountType: promoData.discountType || 'flat',
+            DiscountValue: promoData.discountValue,
+            MinBookingAmount: promoData.minBookingAmount || 0,
+            MaxDiscount: promoData.maxDiscount || null,
+            UsageLimit: promoData.usageLimit || null,
+            ValidFrom: validFrom,
+            ValidUntil: validUntil,
+            IsActive: true
+        });
     }
 
-    getPromosByArena(arenaIds) {
-        const promos = this._readData();
-        return promos.filter(p => arenaIds.includes(p.arenaId)); 
+    async getPromos(arenaIds) {
+        const where = { IsActive: true };
+        // null arenaIds = super_admin — return all
+        if (arenaIds) {
+            where.ArenaId = { [Op.in]: arenaIds };
+        }
+        return await PromoCode.findAll({ where, order: [['CreatedDate', 'DESC']] });
     }
 
-    // Adjusted to support the middleware logic seamlessly
-    getPromos(arenaIds) {
-        const promos = this._readData();
-        return promos.filter(p => arenaIds.includes(p.arenaId));
+    async getPromoById(id, arenaIds) {
+        const where = { PromoId: id };
+        if (arenaIds) {
+            where.ArenaId = { [Op.in]: arenaIds };
+        }
+        return await PromoCode.findOne({ where });
     }
 
-    getPromoById(id, arenaIds) {
-        const promos = this._readData();
-        return promos.find(p => p.id === id && arenaIds.includes(p.arenaId));
+    async getPromosByArena(arenaIds) {
+        return this.getPromos(arenaIds);
+    }
+
+    async validatePromoCode(code, arenaId, bookingAmount) {
+        const { sequelize } = require('../../models');
+        const promo = await PromoCode.findOne({
+            where: {
+                Code: code.toUpperCase(),
+                ArenaId: arenaId,
+                IsActive: true,
+                [Op.and]: [
+                    sequelize.literal('(ValidUntil IS NULL OR ValidUntil >= GETDATE())'),
+                    sequelize.literal('(ValidFrom IS NULL OR ValidFrom <= GETDATE())')
+                ],
+                MinBookingAmount: { [Op.lte]: bookingAmount }
+            }
+        });
+
+        if (!promo) return null;
+
+        // Check usage limit
+        if (promo.UsageLimit !== null && promo.UsedCount >= promo.UsageLimit) {
+            return null; // Exhausted
+        }
+
+        return promo;
+    }
+
+    async incrementUsage(promoId) {
+        await PromoCode.increment('UsedCount', { where: { PromoId: promoId } });
+    }
+
+    async updatePromo(id, arenaIds, data) {
+        const where = { PromoId: id };
+        if (arenaIds) where.ArenaId = { [Op.in]: arenaIds };
+        await PromoCode.update(data, { where });
+        return this.getPromoById(id, arenaIds);
+    }
+
+    async deletePromo(id, arenaIds) {
+        const where = { PromoId: id };
+        if (arenaIds) where.ArenaId = { [Op.in]: arenaIds };
+        return await PromoCode.update({ IsActive: false }, { where });
     }
 }
 

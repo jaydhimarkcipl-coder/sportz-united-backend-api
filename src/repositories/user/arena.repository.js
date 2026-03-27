@@ -3,13 +3,32 @@ const { Op } = require('sequelize');
 
 class ArenaRepository {
     async findAllActiveArenas() {
-        return await Arena.findAll({
-            where: { IsActive: true, IsDelete: false }
+        const { Court, Sport, CourtSlot, Amenity } = require('../../models');
+        const arenas = await Arena.findAll({
+            where: { IsActive: true, IsDelete: false },
+            include: [
+                {
+                    model: ArenaAmenity,
+                    include: [{ model: Amenity }]
+                },
+                {
+                    model: Court,
+                    attributes: ['CourtId', 'CourtName', 'SportId'],
+                    where: { IsActive: true, IsDelete: false },
+                    required: false,
+                    include: [
+                        { model: Sport, attributes: ['Name'] },
+                        { model: CourtSlot, attributes: ['SlotId', 'StartTime', 'EndTime', 'BasePrice', 'DayName'], required: false }
+                    ]
+                }
+            ]
         });
+
+        return arenas.map(arena => this._formatArena(arena));
     }
 
     async findArenaById(arenaId) {
-        const { Court, Sport, CourtSlot } = require('../../models');
+        const { Court, Sport, CourtSlot, Amenity } = require('../../models');
         const arena = await Arena.findOne({
             where: { ArenaId: arenaId, IsActive: true, IsDelete: false },
             include: [
@@ -24,43 +43,14 @@ class ArenaRepository {
                     required: false,
                     include: [
                         { model: Sport, attributes: ['Name'] },
-                        { model: CourtSlot, attributes: ['BasePrice'], required: false }
+                        { model: CourtSlot, attributes: ['SlotId', 'StartTime', 'EndTime', 'BasePrice', 'DayName'], required: false }
                     ]
                 }
             ]
         });
 
         if (!arena) return null;
-
-        const arenaJson = arena.toJSON();
-        const courts = arenaJson.Courts || [];
-
-        // Aggregate Sports
-        const sportsSet = new Set();
-        courts.forEach(c => {
-            if (c.Sport && c.Sport.Name) sportsSet.add(c.Sport.Name);
-        });
-        arenaJson.Sports = Array.from(sportsSet);
-
-        // Aggregate BasePrice (min of non-zero prices)
-        let minPrice = null;
-        courts.forEach(c => {
-            const prices = (c.CourtSlots || []).map(s => parseFloat(s.BasePrice)).filter(p => !isNaN(p) && p > 0);
-            if (prices.length > 0) {
-                const localMin = Math.min(...prices);
-                if (minPrice === null || localMin < minPrice) minPrice = localMin;
-            }
-        });
-        arenaJson.BasePrice = minPrice || 0;
-
-        // Keep courts list but clean up nested slots
-        arenaJson.Courts = courts.map(c => ({
-            CourtId: c.CourtId,
-            CourtName: c.CourtName,
-            Sport: c.Sport ? c.Sport.Name : null
-        }));
-
-        return arenaJson;
+        return this._formatArena(arena, true); // true indicates detailed view
     }
 
     async findCourtsByArenaId(arenaId) {
@@ -101,18 +91,22 @@ class ArenaRepository {
         const include = [
             {
                 model: Court,
-                attributes: ['CourtId', 'SportId'],
+                attributes: ['CourtId', 'SportId', 'CourtName'],
                 where: { IsActive: true, IsDelete: false },
                 required: false,
                 include: [
                     { model: Sport, attributes: ['Name'] },
                     {
                         model: CourtSlot,
-                        attributes: ['BasePrice', 'StartTime', 'DayName'],
+                        attributes: ['SlotId', 'StartTime', 'EndTime', 'BasePrice', 'DayName'],
                         required: false,
                         where: {}
                     }
                 ]
+            },
+            {
+                model: ArenaAmenity,
+                include: [{ model: Amenity }]
             }
         ];
 
@@ -158,31 +152,10 @@ class ArenaRepository {
 
         // 6. Post-process & Price Range Filter
         let results = arenas.map(arena => {
-            const arenaJson = arena.toJSON();
-            const courts = arenaJson.Courts || [];
-
-            const sportsSet = new Set();
-            courts.forEach(c => {
-                if (c.Sport && c.Sport.Name) sportsSet.add(c.Sport.Name);
-            });
-            arenaJson.Sports = Array.from(sportsSet);
-
-            let minPrice = null;
-            courts.forEach(c => {
-                const prices = (c.CourtSlots || []).map(s => parseFloat(s.BasePrice)).filter(p => !isNaN(p) && p > 0);
-                if (prices.length > 0) {
-                    const localMin = Math.min(...prices);
-                    if (minPrice === null || localMin < minPrice) minPrice = localMin;
-                }
-            });
-            arenaJson.BasePrice = minPrice || 0;
-
+            const arenaJson = this._formatArena(arena);
             if (arenaJson.Distance) {
                 arenaJson.Distance = parseFloat(parseFloat(arenaJson.Distance).toFixed(2));
             }
-
-            delete arenaJson.Courts;
-            delete arenaJson.ArenaAmenities;
             return arenaJson;
         });
 
@@ -198,6 +171,69 @@ class ArenaRepository {
         }
 
         return results;
+    }
+
+    _formatArena(arena, isDetailed = false) {
+        const arenaJson = arena.toJSON();
+        const courts = arenaJson.Courts || [];
+
+        // Aggregate Sports
+        const sportsSet = new Set();
+        courts.forEach(c => {
+            if (c.Sport && c.Sport.Name) sportsSet.add(c.Sport.Name);
+        });
+        arenaJson.Sports = Array.from(sportsSet);
+
+        // Aggregate Amenities
+        const amenities = [];
+        if (arenaJson.ArenaAmenities) {
+            arenaJson.ArenaAmenities.forEach(aa => {
+                if (aa.isActive && aa.Amenity && aa.Amenity.isActive && !aa.Amenity.isDelete && aa.Amenity.name) {
+                    amenities.push({
+                        AmenityId: aa.Amenity.amenityId,
+                        Name: aa.Amenity.name
+                    });
+                }
+            });
+        }
+        arenaJson.Amenities = amenities;
+
+        // Aggregate BasePrice and Slots
+        let minPrice = null;
+        const allSlots = [];
+        courts.forEach(c => {
+            const prices = (c.CourtSlots || []).map(s => parseFloat(s.BasePrice)).filter(p => !isNaN(p) && p > 0);
+            if (prices.length > 0) {
+                const localMin = Math.min(...prices);
+                if (minPrice === null || localMin < minPrice) minPrice = localMin;
+            }
+            
+            if (c.CourtSlots) {
+                c.CourtSlots.forEach(s => {
+                    allSlots.push({
+                        ...s,
+                        CourtId: c.CourtId,
+                        CourtName: c.CourtName
+                    });
+                });
+            }
+        });
+        arenaJson.BasePrice = minPrice || 0;
+        arenaJson.Slots = allSlots;
+
+        if (!isDetailed) {
+            delete arenaJson.Courts;
+        } else {
+            // Clean up courts for detailed view
+            arenaJson.Courts = courts.map(c => ({
+                CourtId: c.CourtId,
+                CourtName: c.CourtName,
+                Sport: c.Sport ? c.Sport.Name : null
+            }));
+        }
+
+        delete arenaJson.ArenaAmenities;
+        return arenaJson;
     }
 }
 

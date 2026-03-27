@@ -60,7 +60,7 @@ router.get('/search', verifyToken, searchArenas);
  *       200:
  *         description: List of arenas
  */
-router.get('/', verifyToken, getArenas);
+router.get('/', getArenas);
 
 /**
  * @swagger

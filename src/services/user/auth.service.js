@@ -41,9 +41,11 @@ class AuthService {
     }
 
     async sendOtp(phone) {
+        let isNewUser = false;
         // Check if player exists
         let player = await authRepo.findPlayerByPhone(phone);
         if (!player) {
+            isNewUser = true;
             // Auto-register if doesn't exist? For now, let's assume they must register first or we create a stub
             player = await authRepo.createPlayer({ 
                 Phone: phone, 
@@ -62,7 +64,7 @@ class AuthService {
         // Save OTP to some store (Redis or Memory) with expiry. 
         // For simplicity, I'll use a global map (NOT FOR PRODUCTION)
         global.otpStore = global.otpStore || {};
-        global.otpStore[phone] = { otp, expires: Date.now() + 300000 }; // 5 mins
+        global.otpStore[phone] = { otp, expires: Date.now() + 300000, isNewUser }; // 5 mins
 
         return { message: 'OTP sent successfully', otp }; // Returning OTP for testing convenience
     }
@@ -74,12 +76,13 @@ class AuthService {
             throw { statusCode: 401, message: 'Invalid or expired OTP' };
         }
 
+        const isNewUser = stored.isNewUser;
         delete global.otpStore[phone];
 
         const player = await authRepo.findPlayerByPhone(phone);
         const token = this._generateToken(player);
         
-        return { token, player };
+        return { token, player, isNewUser };
     }
 
     _generateToken(player) {

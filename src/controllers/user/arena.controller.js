@@ -36,6 +36,17 @@ class ArenaController {
             next(error);
         }
     }
+
+    async getArenaSlots(req, res, next) {
+        try {
+            const { arenaId } = req.params;
+            const { date, sportId, courtId } = req.query;
+            const slots = await arenaService.getArenaSlots(arenaId, date, { sportId, courtId });
+            res.status(200).json({ success: true, data: slots });
+        } catch (error) {
+            next(error);
+        }
+    }
 }
 
 module.exports = new ArenaController();

@@ -20,6 +20,10 @@ class ArenaService {
     async search(filters) {
         return await arenaRepo.searchArenas(filters);
     }
+
+    async getArenaSlots(arenaId, date, filters = {}) {
+        return await arenaRepo.findSlotsByArenaIdAndDate(arenaId, date, filters);
+    }
 }
 
 module.exports = new ArenaService();

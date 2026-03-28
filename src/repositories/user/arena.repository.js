@@ -221,19 +221,79 @@ class ArenaRepository {
         arenaJson.BasePrice = minPrice || 0;
         arenaJson.Slots = allSlots;
 
-        if (!isDetailed) {
-            delete arenaJson.Courts;
-        } else {
-            // Clean up courts for detailed view
-            arenaJson.Courts = courts.map(c => ({
-                CourtId: c.CourtId,
-                CourtName: c.CourtName,
-                Sport: c.Sport ? c.Sport.Name : null
-            }));
-        }
+        // Map Courts with SportId
+        arenaJson.Courts = courts.map(c => ({
+            CourtId: c.CourtId,
+            CourtName: c.CourtName,
+            SportId: c.SportId,
+            Sport: c.Sport ? c.Sport.Name : null
+        }));
 
         delete arenaJson.ArenaAmenities;
         return arenaJson;
+    }
+
+    async findSlotsByArenaIdAndDate(arenaId, date, filters = {}) {
+        const { sportId, courtId } = filters;
+        const { Court, Sport, CourtSlot, Booking, BookingDetail } = require('../../models');
+
+        const dateObj = new Date(date);
+        const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const dayName = dayNames[dateObj.getDay()];
+
+        const courtWhere = { ArenaId: arenaId, IsActive: true, IsDelete: false };
+        if (sportId) courtWhere.SportId = sportId;
+        if (courtId) courtWhere.CourtId = courtId;
+
+        // 1. Get all courts for the arena
+        const courts = await Court.findAll({
+            where: courtWhere,
+            include: [
+                { model: Sport, attributes: ['Name'] },
+                {
+                    model: CourtSlot,
+                    where: { 
+                        DayName: { [Op.like]: `%${dayName}%` }
+                    },
+                    required: false
+                }
+            ]
+        });
+
+        // 2. Get all bookings for these courts on the given date
+        const courtIds = courts.map(c => c.CourtId);
+        const bookings = await Booking.findAll({
+            where: {
+                CourtId: { [Op.in]: courtIds },
+                BookingDate: date,
+                Status: 'Confirmed'
+            },
+            include: [{ model: BookingDetail, attributes: ['SlotId'] }]
+        });
+
+        // Create a map of booked slot IDs
+        const bookedSlotIds = new Set();
+        bookings.forEach(b => {
+            if (b.BookingDetails) {
+                b.BookingDetails.forEach(bd => bookedSlotIds.add(bd.SlotId));
+            }
+        });
+
+        // 3. Format the result
+        return courts.map(court => {
+            const courtJson = court.toJSON();
+            const slots = (courtJson.CourtSlots || []).map(slot => ({
+                ...slot,
+                Status: bookedSlotIds.has(slot.SlotId) ? 'Booked' : 'Available'
+            }));
+
+            return {
+                CourtId: courtJson.CourtId,
+                CourtName: courtJson.CourtName,
+                SportName: courtJson.Sport ? courtJson.Sport.Name : null,
+                Slots: slots
+            };
+        });
     }
 }
 

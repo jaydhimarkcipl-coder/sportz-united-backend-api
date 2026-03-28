@@ -1,5 +1,5 @@
 const express = require('express');
-const { getArenas, getArenaDetails, getArenaCourts, searchArenas } = require('../../controllers/user/arena.controller');
+const { getArenas, getArenaDetails, getArenaCourts, searchArenas, getArenaSlots } = require('../../controllers/user/arena.controller');
 const { verifyToken } = require('../../middlewares/auth.middleware');
 const router = express.Router();
 
@@ -80,7 +80,7 @@ router.get('/', getArenas);
  *       200:
  *         description: Arena details
  */
-router.get('/:arenaId', verifyToken, getArenaDetails);
+router.get('/:arenaId', getArenaDetails);
 
 /**
  * @swagger
@@ -113,5 +113,36 @@ router.get('/:arenaId/courts', verifyToken, getArenaCourts);
  *         description: List of reviews
  */
 router.get('/:arenaId/reviews', (req, res) => res.json({ success: true, data: [] }));
+
+/**
+ * @swagger
+ * /arenas/{arenaId}/slots:
+ *   get:
+ *     summary: Get all slots (available/booked) for all courts in an arena by date
+ *     tags: [Arenas]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: arenaId
+ *         required: true
+ *         schema: { type: integer }
+ *       - in: query
+ *         name: date
+ *         required: true
+ *         schema: { type: string, format: date, example: "2026-03-28" }
+ *       - in: query
+ *         name: sportId
+ *         required: false
+ *         schema: { type: integer }
+ *       - in: query
+ *         name: courtId
+ *         required: false
+ *         schema: { type: integer }
+ *     responses:
+ *       200:
+ *         description: List of courts and their slots with status
+ */
+router.get('/:arenaId/slots', verifyToken, getArenaSlots);
 
 module.exports = router;

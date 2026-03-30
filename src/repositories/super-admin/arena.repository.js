@@ -1,4 +1,5 @@
 const { Arena, User, Court, Sport, CourtSlot } = require('../../models');
+const { getFullUrl } = require('../../utils/url.util');
 
 class SuperArenaRepository {
     async createArena(data) {
@@ -30,6 +31,11 @@ class SuperArenaRepository {
             CourtName: c.CourtName,
             Sport: c.Sport ? c.Sport.Name : null
         }));
+
+        // Ensure absolute URLs
+        if (arenaJson.LogoUrl) {
+            arenaJson.LogoUrl = getFullUrl(arenaJson.LogoUrl);
+        }
 
         return arenaJson;
     }

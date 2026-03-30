@@ -1,5 +1,6 @@
 const { Arena, Amenity, ArenaAmenity } = require('../../models');
 const { Op } = require('sequelize');
+const { getFullUrl } = require('../../utils/url.util');
 
 class ArenaRepository {
     async findAllActiveArenas() {
@@ -220,6 +221,11 @@ class ArenaRepository {
         });
         arenaJson.BasePrice = minPrice || 0;
         arenaJson.Slots = allSlots;
+
+        // Ensure absolute URLs
+        if (arenaJson.LogoUrl) {
+            arenaJson.LogoUrl = getFullUrl(arenaJson.LogoUrl);
+        }
 
         // Map Courts with SportId
         arenaJson.Courts = courts.map(c => ({

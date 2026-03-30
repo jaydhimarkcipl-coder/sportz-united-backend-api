@@ -7,6 +7,7 @@ const { getBalance } = require('../../controllers/user/payment.controller');
 const { verifyToken } = require('../../middlewares/auth.middleware');
 const validate = require('../../middlewares/validate.middleware');
 const authRepo = require('../../repositories/user/auth.repository');
+const { getFullUrl } = require('../../utils/url.util');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -149,7 +150,7 @@ router.post('/upload-avatar', verifyToken, upload.single('avatar'), async (req, 
         const avatarUrl = `/uploads/${req.file.filename}`;
         await authRepo.updatePlayer(req.user.id, { ProfilePhotoUrl: avatarUrl });
         
-        res.status(200).json({ success: true, url: avatarUrl });
+        res.status(200).json({ success: true, url: getFullUrl(avatarUrl) });
     } catch (e) {
         next(e);
     }

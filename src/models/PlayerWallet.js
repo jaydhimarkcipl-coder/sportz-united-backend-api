@@ -21,16 +21,14 @@ const PlayerWallet = sequelize.define('PlayerWallet', {
     },
     CreatedDate: {
         type: DataTypes.DATE,
-        defaultValue: DataTypes.NOW
+        defaultValue: sequelize.literal('GETDATE()')
     },
     ModifiedDate: {
         type: DataTypes.DATE
     }
 }, {
     tableName: 'tblPlayerWallet',
-    timestamps: true,
-    createdAt: 'CreatedDate',
-    updatedAt: 'ModifiedDate'
+    timestamps: false
 });
 
 module.exports = PlayerWallet;

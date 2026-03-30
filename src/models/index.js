@@ -51,12 +51,12 @@ CourtSlot.hasMany(BookingDetail, { foreignKey: 'SlotId' });
 BookingDetail.belongsTo(CourtSlot, { foreignKey: 'SlotId' });
 
 // Booking & BookingPlayer
-Booking.hasMany(BookingPlayer, { foreignKey: 'BookingId' });
-BookingPlayer.belongsTo(Booking, { foreignKey: 'BookingId' });
+Booking.hasMany(BookingPlayer, { foreignKey: 'BookingId', onDelete: 'NO ACTION' });
+BookingPlayer.belongsTo(Booking, { foreignKey: 'BookingId', onDelete: 'NO ACTION' });
 
 // Player & BookingPlayer
-Player.hasMany(BookingPlayer, { foreignKey: 'PlayerId' });
-BookingPlayer.belongsTo(Player, { foreignKey: 'PlayerId' });
+Player.hasMany(BookingPlayer, { foreignKey: 'PlayerId', onDelete: 'NO ACTION' });
+BookingPlayer.belongsTo(Player, { foreignKey: 'PlayerId', onDelete: 'NO ACTION' });
 
 // Arena & ArenaAmenity
 Arena.hasMany(ArenaAmenity, { foreignKey: 'arenaId' });
@@ -71,12 +71,12 @@ Player.hasOne(PlayerWallet, { foreignKey: 'PlayerId' });
 PlayerWallet.belongsTo(Player, { foreignKey: 'PlayerId' });
 
 // Booking & Transaction
-Booking.hasMany(Transaction, { foreignKey: 'BookingId' });
-Transaction.belongsTo(Booking, { foreignKey: 'BookingId' });
+Booking.hasMany(Transaction, { foreignKey: 'BookingId', onDelete: 'NO ACTION' });
+Transaction.belongsTo(Booking, { foreignKey: 'BookingId', onDelete: 'NO ACTION' });
 
 // Player & Transaction
-Player.hasMany(Transaction, { foreignKey: 'PlayerId' });
-Transaction.belongsTo(Player, { foreignKey: 'PlayerId' });
+Player.hasMany(Transaction, { foreignKey: 'PlayerId', onDelete: 'NO ACTION' });
+Transaction.belongsTo(Player, { foreignKey: 'PlayerId', onDelete: 'NO ACTION' });
 
 // User & RefreshToken
 User.hasMany(RefreshToken, { foreignKey: 'UserId', as: 'RefreshTokens' });

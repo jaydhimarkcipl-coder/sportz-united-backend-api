@@ -12,6 +12,11 @@ class BookingService {
         const startTime = slot.StartTime;
         const endTime = slot.EndTime;
         
+        console.log('--- Booking Creation Diagnostics ---');
+        console.log(`Raw StartTime: ${startTime}, Type: ${typeof startTime}`);
+        console.log(`Raw EndTime: ${endTime}, Type: ${typeof endTime}`);
+        console.log(`BookingDate: ${bookingDate}`);
+        
         // Prevent double booking
         const overlaps = await bookingRepo.findOverlappingBookings(courtId, bookingDate, startTime, endTime);
         if (overlaps && overlaps.length > 0) {
@@ -24,14 +29,28 @@ class BookingService {
         try {
             transaction = await sequelize.transaction();
 
+            // Format time strings if they are Date objects (Sequelize sometimes returns them as such for TIME type)
+            const formatTime = (t) => {
+                if (t instanceof Date) {
+                    return t.toISOString().split('T')[1].split('.')[0]; // HH:mm:ss
+                }
+                return t;
+            };
+
+            const formattedStartTime = formatTime(startTime);
+            const formattedEndTime = formatTime(endTime);
+
+            console.log(`Formatted StartTime: ${formattedStartTime}`);
+            console.log(`Formatted EndTime: ${formattedEndTime}`);
+
             // Insert booking
             const bookingData = {
                 BookingCode: `BKG-${Date.now()}`,
                 PlayerId: playerId,
                 CourtId: courtId,
                 BookingDate: bookingDate,
-                StartTime: startTime,
-                EndTime: endTime,
+                StartTime: formattedStartTime,
+                EndTime: formattedEndTime,
                 TotalAmount: totalAmount,
                 NetAmount: totalAmount,
                 Status: 'Confirmed',
@@ -40,8 +59,8 @@ class BookingService {
 
             const detailsData = [{
                 SlotId: slotId,
-                StartTime: startTime,
-                EndTime: endTime,
+                StartTime: formattedStartTime,
+                EndTime: formattedEndTime,
                 Amount: totalAmount,
                 IsHalfSlot: slot.IsHalfSlot || false,
                 Duration: slot.DurationMin

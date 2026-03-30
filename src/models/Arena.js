@@ -57,7 +57,7 @@ const Arena = sequelize.define('Arena', {
     },
     CreatedDate: {
         type: DataTypes.DATE,
-        defaultValue: DataTypes.NOW
+        defaultValue: sequelize.literal('GETDATE()')
     },
     ModifiedDate: {
         type: DataTypes.DATE
@@ -72,9 +72,7 @@ const Arena = sequelize.define('Arena', {
     }
 }, {
     tableName: 'tblArena',
-    timestamps: true,
-    createdAt: 'CreatedDate',
-    updatedAt: 'ModifiedDate'
+    timestamps: false
 });
 
 module.exports = Arena;

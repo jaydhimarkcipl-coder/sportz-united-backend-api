@@ -143,6 +143,6 @@ router.get('/:arenaId/reviews', (req, res) => res.json({ success: true, data: []
  *       200:
  *         description: List of courts and their slots with status
  */
-router.get('/:arenaId/slots', verifyToken, getArenaSlots);
+router.get('/:arenaId/slots', getArenaSlots);
 
 module.exports = router;

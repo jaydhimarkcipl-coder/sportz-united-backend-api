@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Joi = require('joi');
 const { getBalance, addPayment } = require('../../controllers/user/payment.controller');
+const razorpayController = require('../../controllers/user/razorpay.controller');
 const { verifyToken } = require('../../middlewares/auth.middleware');
 const validate = require('../../middlewares/validate.middleware');
 
@@ -70,7 +71,85 @@ router.get('/wallet/balance/:playerId', verifyToken, getBalance);
  *     responses:
  *       201:
  *         description: Payment recorded
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success: { type: boolean }
+ *                 message: { type: string }
+ *                 data: { type: object }
  */
 router.post('/', verifyToken, validate(addPaymentSchema), addPayment);
+
+/**
+ * @swagger
+ * /payments/razorpay/order:
+ *   post:
+ *     summary: Create a razorpay order for wallet topup
+ *     tags: [Payments]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [amount]
+ *             properties:
+ *               amount:
+ *                 type: number
+ *                 description: Amount in INR
+ *     responses:
+ *       200:
+ *         description: Order created
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success: { type: boolean }
+ *                 data: { type: object }
+ */
+router.post('/razorpay/order', verifyToken, razorpayController.createOrder);
+
+/**
+ * @swagger
+ * /payments/razorpay/verify:
+ *   post:
+ *     summary: Verify Razorpay payment and add to wallet
+ *     tags: [Payments]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [razorpay_order_id, razorpay_payment_id, razorpay_signature, amount]
+ *             properties:
+ *               razorpay_order_id:
+ *                 type: string
+ *               razorpay_payment_id:
+ *                 type: string
+ *               razorpay_signature:
+ *                 type: string
+ *               amount:
+ *                 type: number
+ *                 description: Amount in INR
+ *     responses:
+ *       200:
+ *         description: Payment verified
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success: { type: boolean }
+ *                 message: { type: string }
+ */
+router.post('/razorpay/verify', verifyToken, razorpayController.verifyPayment);
 
 module.exports = router;

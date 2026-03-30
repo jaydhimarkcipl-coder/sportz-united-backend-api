@@ -30,7 +30,7 @@ const Transaction = sequelize.define('Transaction', {
     },
     CreatedDate: {
         type: DataTypes.DATE,
-        defaultValue: DataTypes.NOW
+        defaultValue: sequelize.literal('GETDATE()')
     },
     Notes: {
         type: DataTypes.STRING(255)
@@ -40,9 +40,7 @@ const Transaction = sequelize.define('Transaction', {
     }
 }, {
     tableName: 'tblTransaction',
-    timestamps: true,
-    createdAt: 'CreatedDate',
-    updatedAt: false
+    timestamps: false
 });
 
 module.exports = Transaction;

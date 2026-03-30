@@ -42,16 +42,14 @@ const Player = sequelize.define('Player', {
     },
     CreatedDate: {
         type: DataTypes.DATE,
-        defaultValue: DataTypes.NOW
+        defaultValue: sequelize.literal('GETDATE()')
     },
     ModifiedDate: {
         type: DataTypes.DATE
     }
 }, {
     tableName: 'tblPlayer',
-    timestamps: true,
-    createdAt: 'CreatedDate',
-    updatedAt: 'ModifiedDate'
+    timestamps: false
 });
 
 module.exports = Player;

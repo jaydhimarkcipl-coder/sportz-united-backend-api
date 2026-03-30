@@ -18,7 +18,7 @@ const Sport = sequelize.define('Sport', {
     },
     CreatedDate: {
         type: DataTypes.DATE,
-        defaultValue: DataTypes.NOW
+        defaultValue: sequelize.literal('GETDATE()')
     },
     ModifiedDate: {
         type: DataTypes.DATE
@@ -35,9 +35,7 @@ const Sport = sequelize.define('Sport', {
     }
 }, {
     tableName: 'tblSports',
-    timestamps: true,
-    createdAt: 'CreatedDate',
-    updatedAt: 'ModifiedDate'
+    timestamps: false
 });
 
 module.exports = Sport;

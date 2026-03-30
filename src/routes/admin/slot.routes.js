@@ -108,7 +108,45 @@ router.post('/generate', adminSlotController.generate);
  *     responses:
  *       200:
  *         description: List of slots
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success: { type: boolean }
+ *                 data: { type: array, items: { type: object } }
  */
 router.get('/', adminSlotController.getAll);
+
+const deleteSchema = Joi.object({
+    courtId: Joi.number().required()
+});
+
+/**
+ * @swagger
+ * /admin/slots/court/{courtId}:
+ *   delete:
+ *     summary: Delete all slots for a court
+ *     tags: [Admin Slots]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: courtId
+ *         required: true
+ *         schema: { type: integer }
+ *     responses:
+ *       200:
+ *         description: Slots deleted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success: { type: boolean }
+ *                 message: { type: string }
+ *                 count: { type: integer }
+ */
+router.delete('/court/:courtId', validate(deleteSchema, 'params'), adminSlotController.deleteAll);
 
 module.exports = router;

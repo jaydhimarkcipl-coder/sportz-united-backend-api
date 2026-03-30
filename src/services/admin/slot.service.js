@@ -92,6 +92,16 @@ class AdminSlotService {
         const m = mTotal % 60;
         return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:00`;
     }
+
+    async deleteAllSlots(courtId, ownedArenaIds) {
+        const court = await adminCourtRepo.findCourtById(courtId);
+        if (!court || (ownedArenaIds && !ownedArenaIds.includes(court.ArenaId))) {
+            throw { statusCode: 404, message: 'Court not found or access denied' };
+        }
+
+        const count = await adminSlotRepo.deleteAllByCourt(courtId);
+        return { message: `Deleted ${count} slots for court ID ${courtId}`, count };
+    }
 }
 
 module.exports = new AdminSlotService();

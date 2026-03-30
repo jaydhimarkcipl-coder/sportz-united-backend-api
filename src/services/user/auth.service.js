@@ -1,6 +1,7 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const authRepo = require('../../repositories/user/auth.repository');
+const { getFullUrl } = require('../../utils/url.util');
 
 class AuthService {
     async register(playerData) {
@@ -35,7 +36,13 @@ class AuthService {
     async getMe(userId, type) {
         // Implementation depends on user type (Player vs User)
         if (type === 'Player') {
-            return await authRepo.findPlayerById(userId);
+            const player = await authRepo.findPlayerById(userId);
+            if (player) {
+                const p = player.toJSON();
+                if (p.ProfilePhotoUrl) p.ProfilePhotoUrl = getFullUrl(p.ProfilePhotoUrl);
+                return p;
+            }
+            return null;
         }
         // ... handle tblUser if needed
     }

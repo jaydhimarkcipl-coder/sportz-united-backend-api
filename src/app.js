@@ -25,6 +25,7 @@ const superUserRoutes = require('./routes/super-admin/user.routes');
 const sportRoutes = require('./routes/user/sport.routes');
 const superAmenityRoutes = require('./routes/super-admin/amenity.routes');
 const adminArenaAmenityRoutes = require('./routes/admin/arena-amenity.routes');
+const publicAmenityRoutes = require('./routes/user/amenity.routes');
 
 // Import error handler
 const errorHandler = require('./middlewares/error.middleware');
@@ -65,6 +66,7 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/super-admin/amenities', superAmenityRoutes);
 app.use('/api/admin/arenas', adminArenaAmenityRoutes);
+app.use('/api/amenities', publicAmenityRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

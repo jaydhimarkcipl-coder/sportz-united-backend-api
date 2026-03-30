@@ -49,6 +49,16 @@ class AdminSlotController {
             next(error);
         }
     }
+
+    async deleteAll(req, res, next) {
+        try {
+            const { courtId } = req.params;
+            const result = await adminSlotService.deleteAllSlots(courtId, req.ownedArenaIds);
+            res.status(200).json({ success: true, ...result });
+        } catch (error) {
+            next(error);
+        }
+    }
 }
 
 module.exports = new AdminSlotController();

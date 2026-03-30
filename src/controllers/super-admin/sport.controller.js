@@ -1,4 +1,5 @@
 const superSportService = require('../../services/super-admin/sport.service');
+const { getFullUrl } = require('../../utils/url.util');
 
 // Map camelCase JSON to PascalCase Database fields
 const mapToPascal = (data) => {
@@ -33,7 +34,12 @@ class SuperSportController {
     async getAll(req, res, next) {
         try {
             const result = await superSportService.getAllSports();
-            res.status(200).json({ success: true, data: result });
+            const formatted = result.map(sport => {
+                const s = sport.toJSON();
+                if (s.SportImageUrl) s.SportImageUrl = getFullUrl(s.SportImageUrl);
+                return s;
+            });
+            res.status(200).json({ success: true, data: formatted });
         } catch (error) {
             next(error);
         }
@@ -42,7 +48,9 @@ class SuperSportController {
     async getById(req, res, next) {
         try {
             const result = await superSportService.getSportById(req.params.id);
-            res.status(200).json({ success: true, data: result });
+            const s = result.toJSON();
+            if (s.SportImageUrl) s.SportImageUrl = getFullUrl(s.SportImageUrl);
+            res.status(200).json({ success: true, data: s });
         } catch (error) {
             next(error);
         }

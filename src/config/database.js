@@ -16,7 +16,7 @@ const sequelize = new Sequelize(
         enableArithAbort: true
       }
     },
-    logging: console.log
+    logging: (msg) => msg && console.log(msg)
   }
 );
 

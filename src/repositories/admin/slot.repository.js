@@ -31,6 +31,12 @@ class AdminSlotRepository {
             include: [{ model: Court, as: 'Court' }]
         });
     }
+
+    async deleteAllByCourt(courtId) {
+        return await CourtSlot.destroy({
+            where: { CourtId: courtId }
+        });
+    }
 }
 
 module.exports = new AdminSlotRepository();

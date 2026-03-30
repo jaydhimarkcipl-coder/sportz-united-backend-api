@@ -46,7 +46,7 @@ const router = express.Router();
  *       200:
  *         description: Search results
  *  */
-router.get('/search', verifyToken, searchArenas);
+router.get('/search', searchArenas);
 
 /**
  * @swagger

@@ -22,7 +22,7 @@ class SuperSportController {
         try {
             const sportData = mapToPascal({ ...req.body });
             if (req.file) {
-                sportData.SportImageUrl = `/uploads/${req.file.filename}`;
+                sportData.SportImageUrl = `uploads/${req.file.filename}`;
             }
             const result = await superSportService.createSport(sportData);
             res.status(201).json({ success: true, data: result });

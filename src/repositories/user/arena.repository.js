@@ -1,6 +1,7 @@
 const { Arena, Amenity, ArenaAmenity } = require('../../models');
 const { Op } = require('sequelize');
 const { getFullUrl } = require('../../utils/url.util');
+const { formatTimeToHHMMSS } = require('../../utils/time.util');
 
 class ArenaRepository {
     async findAllActiveArenas() {
@@ -213,6 +214,8 @@ class ArenaRepository {
                 c.CourtSlots.forEach(s => {
                     allSlots.push({
                         ...s,
+                        StartTime: formatTimeToHHMMSS(s.StartTime),
+                        EndTime: formatTimeToHHMMSS(s.EndTime),
                         CourtId: c.CourtId,
                         CourtName: c.CourtName
                     });
@@ -290,6 +293,8 @@ class ArenaRepository {
             const courtJson = court.toJSON();
             const slots = (courtJson.CourtSlots || []).map(slot => ({
                 ...slot,
+                StartTime: formatTimeToHHMMSS(slot.StartTime),
+                EndTime: formatTimeToHHMMSS(slot.EndTime),
                 Status: bookedSlotIds.has(slot.SlotId) ? 'Booked' : 'Available'
             }));
 

@@ -2,6 +2,7 @@ const { sequelize } = require('../../config/database');
 const bookingRepo = require('../../repositories/user/booking.repository');
 const courtRepo = require('../../repositories/user/court.repository');
 const paymentService = require('./payment.service');
+const { formatTimeToHHMMSS } = require('../../utils/time.util');
 
 class BookingService {
     async createBooking(playerId, courtId, slotId, bookingDate, paymentMethod) {
@@ -9,26 +10,11 @@ class BookingService {
         const slot = await courtRepo.findSlotById(slotId);
         if(!slot) throw { statusCode: 404, message: "Court slot not found" };
 
-        const startTime = slot.StartTime;
-        const endTime = slot.EndTime;
-
-        // Format time strings if they are Date objects (Sequelize sometimes returns them as such for TIME type)
-        const formatTime = (t) => {
-            if (t instanceof Date) {
-                // Use local time components to avoid UTC shift
-                const h = String(t.getHours()).padStart(2, '0');
-                const m = String(t.getMinutes()).padStart(2, '0');
-                const s = String(t.getSeconds()).padStart(2, '0');
-                return `${h}:${m}:${s}`;
-            }
-            return t;
-        };
-
-        const formattedStartTime = formatTime(startTime);
-        const formattedEndTime = formatTime(endTime);
+        const formattedStartTime = formatTimeToHHMMSS(slot.StartTime);
+        const formattedEndTime = formatTimeToHHMMSS(slot.EndTime);
         
         console.log('--- Booking Creation Diagnostics ---');
-        console.log(`Raw StartTime: ${startTime}, Type: ${typeof startTime}`);
+        console.log(`Raw StartTime: ${slot.StartTime}`);
         console.log(`Formatted StartTime: ${formattedStartTime}`);
         console.log(`BookingDate: ${bookingDate}`);
         

@@ -152,4 +152,31 @@ router.post('/razorpay/order', verifyToken, razorpayController.createOrder);
  */
 router.post('/razorpay/verify', verifyToken, razorpayController.verifyPayment);
 
+/**
+ * @swagger
+ * /payments/transactions:
+ *   get:
+ *     summary: Get logged-in player's transaction history
+ *     tags: [Payments]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *         description: Number of records to return
+ *     responses:
+ *       200:
+ *         description: List of transactions
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success: { type: boolean }
+ *                 data: { type: array }
+ */
+router.get('/transactions', verifyToken, razorpayController.getTransactions);
+
 module.exports = router;

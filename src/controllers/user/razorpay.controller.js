@@ -66,6 +66,17 @@ class RazorpayController {
             next(error);
         }
     }
+
+    async getTransactions(req, res, next) {
+        try {
+            const playerId = req.user.id;
+            const { limit } = req.query;
+            const transactions = await paymentService.getPlayerTransactions(playerId, limit);
+            res.status(200).json({ success: true, data: transactions });
+        } catch (error) {
+            next(error);
+        }
+    }
 }
 
 module.exports = new RazorpayController();

@@ -11,14 +11,29 @@ class BookingService {
 
         const startTime = slot.StartTime;
         const endTime = slot.EndTime;
+
+        // Format time strings if they are Date objects (Sequelize sometimes returns them as such for TIME type)
+        const formatTime = (t) => {
+            if (t instanceof Date) {
+                // Use local time components to avoid UTC shift
+                const h = String(t.getHours()).padStart(2, '0');
+                const m = String(t.getMinutes()).padStart(2, '0');
+                const s = String(t.getSeconds()).padStart(2, '0');
+                return `${h}:${m}:${s}`;
+            }
+            return t;
+        };
+
+        const formattedStartTime = formatTime(startTime);
+        const formattedEndTime = formatTime(endTime);
         
         console.log('--- Booking Creation Diagnostics ---');
         console.log(`Raw StartTime: ${startTime}, Type: ${typeof startTime}`);
-        console.log(`Raw EndTime: ${endTime}, Type: ${typeof endTime}`);
+        console.log(`Formatted StartTime: ${formattedStartTime}`);
         console.log(`BookingDate: ${bookingDate}`);
         
         // Prevent double booking
-        const overlaps = await bookingRepo.findOverlappingBookings(courtId, bookingDate, startTime, endTime);
+        const overlaps = await bookingRepo.findOverlappingBookings(courtId, bookingDate, formattedStartTime, formattedEndTime);
         if (overlaps && overlaps.length > 0) {
             throw { statusCode: 400, message: "The selected slot is already booked for this date." };
         }
@@ -28,20 +43,6 @@ class BookingService {
         let transaction;
         try {
             transaction = await sequelize.transaction();
-
-            // Format time strings if they are Date objects (Sequelize sometimes returns them as such for TIME type)
-            const formatTime = (t) => {
-                if (t instanceof Date) {
-                    return t.toISOString().split('T')[1].split('.')[0]; // HH:mm:ss
-                }
-                return t;
-            };
-
-            const formattedStartTime = formatTime(startTime);
-            const formattedEndTime = formatTime(endTime);
-
-            console.log(`Formatted StartTime: ${formattedStartTime}`);
-            console.log(`Formatted EndTime: ${formattedEndTime}`);
 
             // Insert booking
             const bookingData = {
@@ -98,21 +99,11 @@ class BookingService {
     }
 
     async modifyBooking(bookingId, updateData) {
-        // Simple modification logic for now
         const booking = await bookingRepo.findBookingById(bookingId);
         if (!booking) throw { statusCode: 404, message: 'Booking not found' };
         
-        // The original code was using update function which does not exist on booking object returned here unless it is a sequalize instance, which it is.
-        // Wait, the original code in booking.service for modify is:
-        //        const booking = await bookingRepo.findBookingById(bookingId);
-        //        if (!booking) throw { statusCode: 404, message: 'Booking not found' };
-        //        
-        //        return await booking.update(updateData);
-        //
         return await booking.update(updateData);
     }
 }
 
-// Deferred load for circular dependency with paymentService exists? Yes, in original it was:
-// module.exports = new BookingService();
 module.exports = new BookingService();

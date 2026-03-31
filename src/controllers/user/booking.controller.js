@@ -1,4 +1,5 @@
 const bookingService = require('../../services/user/booking.service');
+const { getFullUrl } = require('../../utils/url.util');
 
 class BookingController {
     async createBooking(req, res, next) {
@@ -9,7 +10,13 @@ class BookingController {
 
             const booking = await bookingService.createBooking(playerId, courtId, slotId, bookingDate, paymentMethod);
             
-            res.status(201).json({ success: true, message: 'Booking completed successfully', data: booking });
+            // Add QR code URL to the response if available
+            // Note: booking might need to be re-fetched or we manually construct the URL
+            const bookingJson = booking.toJSON ? booking.toJSON() : booking;
+            const qrFilename = `qr-${bookingJson.BookingCode}.png`;
+            bookingJson.qrCodeUrl = getFullUrl(`uploads/qrcodes/${qrFilename}`);
+            
+            res.status(201).json({ success: true, message: 'Booking completed successfully', data: bookingJson });
         } catch (error) {
             next(error);
         }
@@ -19,7 +26,20 @@ class BookingController {
         try {
             const playerId = req.params.playerId || req.user.id;
             const bookings = await bookingService.getPlayerBookings(playerId);
-            res.status(200).json({ success: true, data: bookings });
+            
+            // Map over bookings to add full QR code URLs
+            const formattedBookings = bookings.map(b => {
+                const bJson = b.toJSON ? b.toJSON() : b;
+                if (bJson.BookingPlayers && bJson.BookingPlayers.length > 0) {
+                    bJson.BookingPlayers = bJson.BookingPlayers.map(p => ({
+                        ...p,
+                        QRCodeUrl: getFullUrl(p.QRCode)
+                    }));
+                }
+                return bJson;
+            });
+
+            res.status(200).json({ success: true, data: formattedBookings });
         } catch (error) {
             next(error);
         }

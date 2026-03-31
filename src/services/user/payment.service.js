@@ -59,7 +59,12 @@ class PaymentService {
                 }
             }
             throw error;
+            throw error;
         }
+    }
+
+    async getPlayerTransactions(playerId, limit) {
+        return await paymentRepo.findTransactionsByPlayerId(playerId, limit);
     }
 }
 

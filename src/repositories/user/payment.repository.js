@@ -45,6 +45,14 @@ class PaymentRepository {
         
         return wallet;
     }
+
+    async findTransactionsByPlayerId(playerId, limit) {
+        return await Transaction.findAll({
+            where: { PlayerId: playerId },
+            order: [['CreatedDate', 'DESC']],
+            limit: limit ? parseInt(limit) : undefined
+        });
+    }
 }
 
 module.exports = new PaymentRepository();

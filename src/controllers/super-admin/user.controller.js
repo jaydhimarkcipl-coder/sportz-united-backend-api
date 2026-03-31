@@ -85,6 +85,16 @@ class SuperUserController {
             next(error);
         }
     }
+
+    async hardDelete(req, res, next) {
+        try {
+            const { id } = req.params;
+            const result = await superUserService.hardDeletePlayer(id);
+            res.status(200).json({ success: true, ...result });
+        } catch (error) {
+            next(error);
+        }
+    }
 }
 
 module.exports = new SuperUserController();

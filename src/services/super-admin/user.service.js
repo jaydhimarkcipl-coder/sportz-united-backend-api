@@ -45,6 +45,14 @@ class SuperUserService {
         }
         return result;
     }
+
+    async hardDeletePlayer(id) {
+        const result = await superUserRepo.hardDeleteUser(id, 'Player');
+        if (!result) {
+            throw { statusCode: 404, message: 'Player not found' };
+        }
+        return result;
+    }
 }
 
 module.exports = new SuperUserService();

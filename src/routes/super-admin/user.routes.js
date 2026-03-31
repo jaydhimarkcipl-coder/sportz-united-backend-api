@@ -216,4 +216,25 @@ router.patch('/:id', upload.single('image'), validate(updateUserSchema), superUs
  */
 router.delete('/:id', superUserController.delete);
 
+/**
+ * @swagger
+ * /super-admin/users/{id}/hard-delete:
+ *   delete:
+ *     summary: "PERMANENTLY DELETE a User (Super Admin) - CAUTION: Irreversible"
+ *     tags: [Super Admin Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     responses:
+ *       200:
+ *         description: Deleted permanently
+ *       400:
+ *         description: Invalid request (non-player)
+ */
+router.delete('/:id/hard-delete', superUserController.hardDelete);
+
 module.exports = router;

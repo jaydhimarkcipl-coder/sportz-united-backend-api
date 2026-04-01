@@ -81,7 +81,29 @@ class BookingService {
         if (!booking) throw { statusCode: 404, message: 'Booking not found' };
         if (booking.Status === 'Cancelled') throw { statusCode: 400, message: 'Booking already cancelled' };
         
-        return await bookingRepo.updateBookingStatus(bookingId, 'Cancelled');
+        let transaction;
+        try {
+            transaction = await sequelize.transaction();
+
+            // Only refund if booking was confirmed and had a value
+            if (booking.Status === 'Confirmed' && parseFloat(booking.NetAmount) > 0) {
+                await paymentService.refundBooking({
+                    BookingId: booking.BookingId,
+                    PlayerId: booking.PlayerId,
+                    Amount: booking.NetAmount,
+                    Notes: `Automatic Refund for Cancellation: ${booking.BookingCode}`
+                }, transaction);
+            }
+
+            const updated = await booking.update({ Status: 'Cancelled' }, { transaction });
+
+            await transaction.commit();
+            return updated;
+        } catch (error) {
+            console.error('--- CANCEL BOOKING REFUND ERROR ---', error);
+            if (transaction) await transaction.rollback();
+            throw error;
+        }
     }
 
     async modifyBooking(bookingId, updateData) {

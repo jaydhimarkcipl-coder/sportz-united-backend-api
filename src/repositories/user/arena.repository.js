@@ -79,12 +79,16 @@ class ArenaRepository {
         const attributes = { include: [] };
         if (lat && lng) {
             const distanceLiteral = sequelize.literal(`
-                (6371 * acos(cos(radians(${parseFloat(lat)})) * cos(radians(Latitude)) * cos(radians(Longitude) - radians(${parseFloat(lng)})) + sin(radians(${parseFloat(lat)})) * sin(radians(Latitude))))
+                (6371 * acos(
+                    CASE 
+                        WHEN (cos(radians(${parseFloat(lat)})) * cos(radians(Latitude)) * cos(radians(Longitude) - radians(${parseFloat(lng)})) + sin(radians(${parseFloat(lat)})) * sin(radians(Latitude))) > 1 THEN 1
+                        WHEN (cos(radians(${parseFloat(lat)})) * cos(radians(Latitude)) * cos(radians(Longitude) - radians(${parseFloat(lng)})) + sin(radians(${parseFloat(lat)})) * sin(radians(Latitude))) < -1 THEN -1
+                        ELSE (cos(radians(${parseFloat(lat)})) * cos(radians(Latitude)) * cos(radians(Longitude) - radians(${parseFloat(lng)})) + sin(radians(${parseFloat(lat)})) * sin(radians(Latitude)))
+                    END
+                ))
             `);
             attributes.include.push([distanceLiteral, 'Distance']);
 
-            // Note: Sequelize doesn't allow using aliases in WHERE for some dialects, 
-            // but we can use having or filter in JS. For MSSQL/Sequelize, we might need a literal in where too.
             if (maxDistance) {
                 where[Op.and] = sequelize.where(distanceLiteral, { [Op.lte]: parseFloat(maxDistance) });
             }

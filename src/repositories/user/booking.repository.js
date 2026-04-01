@@ -3,6 +3,7 @@ const { Op } = require('sequelize');
 const QRCode = require('qrcode');
 const path = require('path');
 const fs = require('fs');
+const { getFullUrl } = require('../../utils/url.util');
 
 class BookingRepository {
     async findOverlappingBookings(courtId, bookingDate, startTime, endTime) {
@@ -73,7 +74,7 @@ class BookingRepository {
 
     async findBookingsByPlayerId(playerId) {
         const { BookingDetail, BookingPlayer, Court, Arena } = require('../../models');
-        return await Booking.findAll({
+        const bookings = await Booking.findAll({
             where: { PlayerId: playerId },
             include: [
                 { model: BookingDetail },
@@ -82,6 +83,33 @@ class BookingRepository {
             ],
             order: [['BookingDate', 'DESC']]
         });
+
+        return bookings.map(b => this._formatBooking(b));
+    }
+
+    _formatBooking(booking) {
+        const json = booking.toJSON();
+
+        // Format LogoUrl from Arena (nested in Court)
+        if (json.Court && json.Court.Arena && json.Court.Arena.LogoUrl) {
+            json.Court.Arena.LogoUrl = getFullUrl(json.Court.Arena.LogoUrl);
+        }
+
+        // Format QRCode in BookingPlayers
+        if (json.BookingPlayers) {
+            json.BookingPlayers.forEach(bp => {
+                if (bp.QRCode) {
+                    bp.QRCode = getFullUrl(bp.QRCode);
+                }
+            });
+        }
+
+        // Format Time strings
+        const { formatTimeToHHMMSS } = require('../../utils/time.util');
+        if (json.StartTime) json.StartTime = formatTimeToHHMMSS(json.StartTime);
+        if (json.EndTime) json.EndTime = formatTimeToHHMMSS(json.EndTime);
+
+        return json;
     }
 
     async updateBookingStatus(bookingId, status) {

@@ -66,6 +66,27 @@ class PaymentService {
     async getPlayerTransactions(playerId, limit) {
         return await paymentRepo.findTransactionsByPlayerId(playerId, limit);
     }
+
+    async refundBooking(refundData, transaction) {
+        const { BookingId, PlayerId, Amount, Notes } = refundData;
+        
+        // 1. Add funds back to wallet
+        await paymentRepo.addFundsToWallet(PlayerId, Amount, transaction);
+        
+        // 2. Create refund transaction record
+        const record = {
+            BookingId: BookingId,
+            PlayerId: PlayerId,
+            PaymentMethod: 'Wallet', // Internal refund always to wallet
+            PaymentStatus: 'Success',
+            Amount: Amount,
+            PaymentType: 'Refund',
+            TransactionId: `REF-${Date.now()}`,
+            Notes: Notes || `Refund for Booking #${BookingId}`
+        };
+        
+        return await paymentRepo.createPaymentRecord(record, transaction);
+    }
 }
 
 module.exports = new PaymentService();

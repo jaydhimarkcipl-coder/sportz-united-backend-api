@@ -1,4 +1,5 @@
 const superUserService = require('../../services/super-admin/user.service');
+const { saveBase64Image, isBase64Image } = require('../../utils/file.util');
 
 // Map camelCase JSON to PascalCase Database fields
 const mapToPascal = (data) => {
@@ -20,7 +21,7 @@ const mapToPascal = (data) => {
     };
     const mapped = {};
     Object.keys(data).forEach(key => {
-        if (key === 'image') return; // Skip multer field
+        if (key === 'image' || key === 'profilePhoto') return; // Skip temporary fields
         const pascalKey = mapping[key] || key;
         mapped[pascalKey] = data[key];
     });
@@ -54,9 +55,14 @@ class SuperUserController {
     async create(req, res, next) {
         try {
             const userData = mapToPascal({ ...req.body });
-            if (req.file) {
-                userData.ProfilePhotoUrl = `/uploads/${req.file.filename}`;
+
+            // Handle Profile Photo Upload (Base64 or Multer)
+            if (isBase64Image(req.body.profilePhoto)) {
+                userData.ProfilePhotoUrl = saveBase64Image(req.body.profilePhoto, 'avatar');
+            } else if (req.file) {
+                userData.ProfilePhotoUrl = `uploads/${req.file.filename}`;
             }
+
             const result = await superUserService.createUser(userData);
             res.status(201).json({ success: true, data: result });
         } catch (error) {
@@ -67,9 +73,14 @@ class SuperUserController {
     async update(req, res, next) {
         try {
             const userData = mapToPascal({ ...req.body });
-            if (req.file) {
-                userData.ProfilePhotoUrl = `/uploads/${req.file.filename}`;
+
+            // Handle Profile Photo Upload (Base64 or Multer)
+            if (isBase64Image(req.body.profilePhoto)) {
+                userData.ProfilePhotoUrl = saveBase64Image(req.body.profilePhoto, 'avatar');
+            } else if (req.file) {
+                userData.ProfilePhotoUrl = `uploads/${req.file.filename}`;
             }
+
             const result = await superUserService.updateUser(req.params.id, userData, req.query.userType || 'User');
             res.status(200).json({ success: true, data: result });
         } catch (error) {

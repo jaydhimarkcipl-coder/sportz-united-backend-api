@@ -1,4 +1,5 @@
 const superArenaService = require('../../services/super-admin/arena.service');
+const { saveBase64Image, isBase64Image } = require('../../utils/file.util');
 
 // Map camelCase JSON to PascalCase Database fields
 const mapToPascal = (data) => {
@@ -34,9 +35,14 @@ class SuperArenaController {
                 ...req.body,
                 ownerUserId: req.body.ownerUserId || req.user.id
             });
-            if (req.file) {
-                arenaData.LogoUrl = `/uploads/${req.file.filename}`;
+
+            // Handle Logo Upload (Base64 or Multer)
+            if (isBase64Image(req.body.logo)) {
+                arenaData.LogoUrl = saveBase64Image(req.body.logo, 'arena');
+            } else if (req.file) {
+                arenaData.LogoUrl = `uploads/${req.file.filename}`;
             }
+
             const result = await superArenaService.createArena(arenaData);
             res.status(201).json({ success: true, data: result });
         } catch (error) {
@@ -65,9 +71,14 @@ class SuperArenaController {
     async update(req, res, next) {
         try {
             const arenaData = mapToPascal({ ...req.body });
-            if (req.file) {
-                arenaData.LogoUrl = `/uploads/${req.file.filename}`;
+
+            // Handle Logo Upload (Base64 or Multer)
+            if (isBase64Image(req.body.logo)) {
+                arenaData.LogoUrl = saveBase64Image(req.body.logo, 'arena');
+            } else if (req.file) {
+                arenaData.LogoUrl = `uploads/${req.file.filename}`;
             }
+
             const result = await superArenaService.updateArena(req.params.id, arenaData);
             res.status(200).json({ success: true, data: result });
         } catch (error) {

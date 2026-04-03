@@ -1,5 +1,6 @@
 const superSportService = require('../../services/super-admin/sport.service');
 const { getFullUrl } = require('../../utils/url.util');
+const { saveBase64Image, isBase64Image } = require('../../utils/file.util');
 
 // Map camelCase JSON to PascalCase Database fields
 const mapToPascal = (data) => {
@@ -21,9 +22,14 @@ class SuperSportController {
     async create(req, res, next) {
         try {
             const sportData = mapToPascal({ ...req.body });
-            if (req.file) {
+            
+            // Handle Sport Image Upload (Base64 or Multer)
+            if (isBase64Image(req.body.sportImage)) {
+                sportData.SportImageUrl = saveBase64Image(req.body.sportImage, 'sport');
+            } else if (req.file) {
                 sportData.SportImageUrl = `uploads/${req.file.filename}`;
             }
+
             const result = await superSportService.createSport(sportData);
             res.status(201).json({ success: true, data: result });
         } catch (error) {
@@ -59,9 +65,14 @@ class SuperSportController {
     async update(req, res, next) {
         try {
             const sportData = mapToPascal({ ...req.body });
-            if (req.file) {
-                sportData.SportImageUrl = `/uploads/${req.file.filename}`;
+            
+            // Handle Sport Image Upload (Base64 or Multer)
+            if (isBase64Image(req.body.sportImage)) {
+                sportData.SportImageUrl = saveBase64Image(req.body.sportImage, 'sport');
+            } else if (req.file) {
+                sportData.SportImageUrl = `uploads/${req.file.filename}`;
             }
+
             const result = await superSportService.updateSport(req.params.id, sportData);
             res.status(200).json({ success: true, data: result });
         } catch (error) {

@@ -18,6 +18,10 @@ const options = {
         url: 'http://192.168.1.30:3000/api',
         description: 'Internal  server',
       },
+      {
+        url: 'http://13.203.242.238:4001/api',
+        description: 'Internal  server',
+      },
     ],
     components: {
       securitySchemes: {

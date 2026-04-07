@@ -3,11 +3,19 @@ const { User } = require('../../models');
 
 class SuperArenaService {
     async createArena(data) {
+        const { sportIds, ...arenaData } = data;
         const arena = await superArenaRepo.createArena({
-            ...data,
+            ...arenaData,
             IsActive: true,
-            IsDelete: false
+            IsDelete: false,
+            IsApproved: false, // Explicitly set to false for approval flow
+            ApprovalStatus: 'Pending'
         });
+
+        // Handle many-to-many sports
+        if (sportIds && Array.isArray(sportIds)) {
+            await arena.setSports(sportIds);
+        }
 
         // Link the owner to this arena if they don't have one yet
         if (arena.OwnerUserId) {
@@ -33,19 +41,43 @@ class SuperArenaService {
     }
 
     async updateArena(id, data) {
+        const { sportIds, ...arenaData } = data;
+
         // If owner is being changed, we need to link the new owner to this arena
-        if (data.OwnerUserId) {
+        if (arenaData.OwnerUserId) {
             await User.update(
                 { ArenaId: id },
-                { where: { UserId: data.OwnerUserId } }
+                { where: { UserId: arenaData.OwnerUserId } }
             );
         }
 
-        const updated = await superArenaRepo.updateArena(id, data);
-        if (!updated) {
+        const arenaInstance = await superArenaRepo.findArenaInstanceById(id);
+        if (!arenaInstance) {
             throw { statusCode: 404, message: 'Arena not found' };
         }
-        return updated;
+
+        await arenaInstance.update(arenaData);
+
+        // Handle many-to-many sports
+        if (sportIds && Array.isArray(sportIds)) {
+            await arenaInstance.setSports(sportIds);
+        }
+
+        return arenaInstance;
+    }
+
+    async reviewArena(id, isApproved, approvalStatus) {
+        const arenaInstance = await superArenaRepo.findArenaInstanceById(id);
+        if (!arenaInstance) {
+            throw { statusCode: 404, message: 'Arena not found' };
+        }
+
+        await arenaInstance.update({
+            IsApproved: isApproved,
+            ApprovalStatus: approvalStatus
+        });
+
+        return arenaInstance;
     }
 
     async deleteArena(id) {

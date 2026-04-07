@@ -49,7 +49,11 @@ const arenaSchema = Joi.object({
     longitude: Joi.number().allow(null),
     openTime: Joi.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$/).allow(null, ''),
     closeTime: Joi.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$/).allow(null, ''),
-    logo: Joi.any().optional()
+    logo: Joi.any().optional(),
+    sportIds: Joi.alternatives().try(
+        Joi.array().items(Joi.number()),
+        Joi.string() // To support comma-separated or JSON string from multipart
+    ).optional()
 });
 
 const updateArenaSchema = Joi.object({
@@ -67,8 +71,19 @@ const updateArenaSchema = Joi.object({
     openTime: Joi.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$/).allow(null, ''),
     closeTime: Joi.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$/).allow(null, ''),
     isActive: Joi.boolean(),
+    isApproved: Joi.boolean(),
+    approvalStatus: Joi.string().valid('Pending', 'Approved', 'Rejected'),
     ownerUserId: Joi.number().optional(),
-    logo: Joi.any().optional()
+    logo: Joi.any().optional(),
+    sportIds: Joi.alternatives().try(
+        Joi.array().items(Joi.number()),
+        Joi.string()
+    ).optional()
+});
+
+const reviewSchema = Joi.object({
+    isApproved: Joi.boolean().required(),
+    approvalStatus: Joi.string().valid('Approved', 'Rejected').required()
 });
 
 /**
@@ -76,34 +91,6 @@ const updateArenaSchema = Joi.object({
  * /super-admin/arenas:
  *   post:
  *     summary: Create a new Arena (Super Admin)
- *     tags: [Super Admin Arenas]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         multipart/form-data:
- *           schema:
- *             type: object
- *             required: [name, city]
- *             properties:
- *               name: { type: string }
- *               ownerUserId: { type: integer }
- *               logo: { type: string, format: binary }
- *               addressLine1: { type: string }
- *               addressLine2: { type: string }
- *               city: { type: string }
- *               state: { type: string }
- *               pinCode: { type: string }
- *               phone: { type: string }
- *               email: { type: string }
- *               latitude: { type: number }
- *               longitude: { type: number }
- *               openTime: { type: string, example: "06:00" }
- *               closeTime: { type: string, example: "22:00" }
- *     responses:
- *       201:
- *         description: Created
  */
 router.post('/', upload.single('logo'), validate(arenaSchema), superArenaController.create);
 
@@ -112,12 +99,6 @@ router.post('/', upload.single('logo'), validate(arenaSchema), superArenaControl
  * /super-admin/arenas:
  *   get:
  *     summary: Get all Arenas globally (Super Admin)
- *     tags: [Super Admin Arenas]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Success
  */
 router.get('/', superArenaController.getAll);
 
@@ -130,17 +111,6 @@ const idParamSchema = Joi.object({
  * /super-admin/arenas/{id}:
  *   get:
  *     summary: Get an Arena by ID
- *     tags: [Super Admin Arenas]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema: { type: integer }
- *     responses:
- *       200:
- *         description: Success
  */
 router.get('/:id', validate(idParamSchema, 'params'), superArenaController.getById);
 
@@ -149,6 +119,14 @@ router.get('/:id', validate(idParamSchema, 'params'), superArenaController.getBy
  * /super-admin/arenas/{id}:
  *   patch:
  *     summary: Update an Arena (Super Admin)
+ */
+router.patch('/:id', upload.single('logo'), validate(updateArenaSchema), superArenaController.update);
+
+/**
+ * @swagger
+ * /super-admin/arenas/{id}/review:
+ *   patch:
+ *     summary: Approve or Reject an Arena (Super Admin)
  *     tags: [Super Admin Arenas]
  *     security:
  *       - bearerAuth: []
@@ -158,48 +136,26 @@ router.get('/:id', validate(idParamSchema, 'params'), superArenaController.getBy
  *         required: true
  *         schema: { type: integer }
  *     requestBody:
+ *       required: true
  *       content:
- *         multipart/form-data:
+ *         application/json:
  *           schema:
  *             type: object
+ *             required: [isApproved, approvalStatus]
  *             properties:
- *               name: { type: string }
- *               ownerUserId: { type: integer }
- *               logo: { type: string, format: binary }
- *               addressLine1: { type: string }
- *               addressLine2: { type: string }
- *               city: { type: string }
- *               state: { type: string }
- *               pinCode: { type: string }
- *               phone: { type: string }
- *               email: { type: string }
- *               latitude: { type: number }
- *               longitude: { type: number }
- *               openTime: { type: string, example: "06:00" }
- *               closeTime: { type: string, example: "22:00" }
- *               isActive: { type: boolean }
+ *               isApproved: { type: boolean }
+ *               approvalStatus: { type: string, enum: [Approved, Rejected] }
  *     responses:
  *       200:
- *         description: Updated
+ *         description: Review status updated
  */
-router.patch('/:id', upload.single('logo'), validate(updateArenaSchema), superArenaController.update);
+router.patch('/:id/review', validate(idParamSchema, 'params'), validate(reviewSchema), superArenaController.review);
 
 /**
  * @swagger
  * /super-admin/arenas/{id}:
  *   delete:
  *     summary: Delete/Deactivate an Arena (Super Admin)
- *     tags: [Super Admin Arenas]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema: { type: integer }
- *     responses:
- *       200:
- *         description: Deleted
  */
 router.delete('/:id', superArenaController.delete);
 

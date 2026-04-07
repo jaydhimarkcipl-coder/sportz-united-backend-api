@@ -15,6 +15,8 @@ const mapToPascal = (data) => {
         openTime: 'OpenTime',
         closeTime: 'CloseTime',
         isActive: 'IsActive',
+        isApproved: 'IsApproved',
+        approvalStatus: 'ApprovalStatus',
         logoUrl: 'LogoUrl',
         addressLine1: 'AddressLine1',
         addressLine2: 'AddressLine2',
@@ -31,10 +33,23 @@ const mapToPascal = (data) => {
 class SuperArenaController {
     async create(req, res, next) {
         try {
-            const arenaData = mapToPascal({
-                ...req.body,
-                ownerUserId: req.body.ownerUserId || req.user.id
-            });
+            // Handle sportIds if sent as string (from multipart/form-data)
+            let sportIds = req.body.sportIds;
+            if (typeof sportIds === 'string') {
+                try {
+                    sportIds = JSON.parse(sportIds);
+                } catch (e) {
+                    sportIds = sportIds.split(',').map(id => parseInt(id.trim()));
+                }
+            }
+
+            const arenaData = {
+                ...mapToPascal({
+                    ...req.body,
+                    ownerUserId: req.body.ownerUserId || req.user.id
+                }),
+                sportIds: sportIds // Service will pick this up
+            };
 
             // Handle Logo Upload (Base64 or Multer)
             if (isBase64Image(req.body.logo)) {
@@ -70,7 +85,20 @@ class SuperArenaController {
 
     async update(req, res, next) {
         try {
-            const arenaData = mapToPascal({ ...req.body });
+            // Handle sportIds if sent as string
+            let sportIds = req.body.sportIds;
+            if (typeof sportIds === 'string' && sportIds) {
+                try {
+                    sportIds = JSON.parse(sportIds);
+                } catch (e) {
+                    sportIds = sportIds.split(',').map(id => parseInt(id.trim()));
+                }
+            }
+
+            const arenaData = {
+                ...mapToPascal({ ...req.body }),
+                sportIds: sportIds
+            };
 
             // Handle Logo Upload (Base64 or Multer)
             if (isBase64Image(req.body.logo)) {
@@ -80,6 +108,16 @@ class SuperArenaController {
             }
 
             const result = await superArenaService.updateArena(req.params.id, arenaData);
+            res.status(200).json({ success: true, data: result });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async review(req, res, next) {
+        try {
+            const { isApproved, approvalStatus } = req.body;
+            const result = await superArenaService.reviewArena(req.params.id, isApproved, approvalStatus);
             res.status(200).json({ success: true, data: result });
         } catch (error) {
             next(error);

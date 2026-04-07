@@ -32,10 +32,23 @@ class AdminSlotController {
         }
     }
 
-    async generate(req, res, next) {
+    async sync(req, res, next) {
         try {
-            const result = await adminSlotService.generateSlots(req.body, req.ownedArenaIds);
-            res.status(201).json({ success: true, ...result });
+            const { courtId } = req.body;
+            const result = await adminSlotService.syncCourtSlots(courtId, req.body, req.ownedArenaIds);
+            res.status(200).json({ success: true, ...result });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async getSlotsByCourt(req, res, next) {
+        try {
+            const { courtId } = req.params;
+            const slots = await adminSlotService.getSlots({ CourtId: courtId }, req.ownedArenaIds);
+            const formatted = adminSlotService.formatSlotsToWeeklyView(slots);
+
+            res.status(200).json({ success: true, data: { courtId, days: formatted } });
         } catch (error) {
             next(error);
         }

@@ -69,6 +69,14 @@ const Arena = sequelize.define('Arena', {
     ReviewCount: {
         type: DataTypes.INTEGER,
         defaultValue: 0
+    },
+    IsApproved: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false
+    },
+    ApprovalStatus: {
+        type: DataTypes.STRING(50),
+        defaultValue: 'Pending'
     }
 }, {
     tableName: 'tblArena',

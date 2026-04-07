@@ -1,14 +1,19 @@
-const { Arena, Amenity, ArenaAmenity } = require('../../models');
+const { Arena, Amenity, ArenaAmenity, Sport } = require('../../models');
 const { Op } = require('sequelize');
 const { getFullUrl } = require('../../utils/url.util');
 const { formatTimeToHHMMSS } = require('../../utils/time.util');
 
 class ArenaRepository {
     async findAllActiveArenas() {
-        const { Court, Sport, CourtSlot, Amenity } = require('../../models');
+        const { Court, CourtSlot, Amenity } = require('../../models');
         const arenas = await Arena.findAll({
-            where: { IsActive: true, IsDelete: false },
+            where: { IsActive: true, IsDelete: false, IsApproved: true },
             include: [
+                {
+                    model: Sport,
+                    attributes: ['SportId', 'Name', 'SportImageUrl'],
+                    through: { attributes: [] } // Hide junction table attributes
+                },
                 {
                     model: ArenaAmenity,
                     include: [{ model: Amenity }]
@@ -20,7 +25,12 @@ class ArenaRepository {
                     required: false,
                     include: [
                         { model: Sport, attributes: ['Name'] },
-                        { model: CourtSlot, attributes: ['SlotId', 'StartTime', 'EndTime', 'BasePrice', 'DayName'], required: false }
+                        {
+                            model: CourtSlot,
+                            attributes: ['SlotId', 'StartTime', 'EndTime', 'BasePrice', 'DayName', 'IsActive'],
+                            required: false,
+                            where: { IsActive: true } // Only show active slots to users
+                        }
                     ]
                 }
             ]
@@ -30,10 +40,15 @@ class ArenaRepository {
     }
 
     async findArenaById(arenaId) {
-        const { Court, Sport, CourtSlot, Amenity } = require('../../models');
+        const { Court, CourtSlot, Amenity } = require('../../models');
         const arena = await Arena.findOne({
-            where: { ArenaId: arenaId, IsActive: true, IsDelete: false },
+            where: { ArenaId: arenaId, IsActive: true, IsDelete: false, IsApproved: true },
             include: [
+                {
+                    model: Sport,
+                    attributes: ['SportId', 'Name', 'SportImageUrl'],
+                    through: { attributes: [] }
+                },
                 {
                     model: ArenaAmenity,
                     include: [{ model: Amenity }]
@@ -45,7 +60,12 @@ class ArenaRepository {
                     required: false,
                     include: [
                         { model: Sport, attributes: ['Name'] },
-                        { model: CourtSlot, attributes: ['SlotId', 'StartTime', 'EndTime', 'BasePrice', 'DayName'], required: false }
+                        {
+                            model: CourtSlot,
+                            attributes: ['SlotId', 'StartTime', 'EndTime', 'BasePrice', 'DayName', 'IsActive'],
+                            required: false,
+                            where: { IsActive: true } // Only show active slots to users
+                        }
                     ]
                 }
             ]
@@ -65,9 +85,9 @@ class ArenaRepository {
 
     async searchArenas(params) {
         const { lat, lng, sportId, city, minRating, priceRange, date, availability, maxDistance, amenityIds } = params;
-        const { Court, Sport, CourtSlot, ArenaAmenity, sequelize } = require('../../models');
+        const { Court, Sport, CourtSlot, ArenaAmenity, sequelize, Amenity } = require('../../models');
 
-        const where = { IsActive: true, IsDelete: false };
+        const where = { IsActive: true, IsDelete: false, IsApproved: true };
         if (city) where.City = city;
 
         // 1. Rating Filter
@@ -96,6 +116,13 @@ class ArenaRepository {
 
         const include = [
             {
+                model: Sport,
+                attributes: ['SportId', 'Name', 'SportImageUrl'],
+                through: { attributes: [] },
+                required: !!sportId,
+                where: sportId ? { SportId: sportId } : {}
+            },
+            {
                 model: Court,
                 attributes: ['CourtId', 'SportId', 'CourtName'],
                 where: { IsActive: true, IsDelete: false },
@@ -104,29 +131,25 @@ class ArenaRepository {
                     { model: Sport, attributes: ['Name'] },
                     {
                         model: CourtSlot,
-                        attributes: ['SlotId', 'StartTime', 'EndTime', 'BasePrice', 'DayName'],
+                        attributes: ['SlotId', 'StartTime', 'EndTime', 'BasePrice', 'DayName', 'IsActive'],
                         required: false,
-                        where: {}
+                        where: { IsActive: true }
                     }
                 ]
             },
             {
                 model: ArenaAmenity,
-                include: [{ model: Amenity }]
+                attributes: ['amenityId'],
+                include: [{ model: Amenity, attributes: ['name', 'iconUrl'] }],
+                required: false
             }
         ];
 
-        // 3. Sport Filter
-        if (sportId) {
-            include[0].where.SportId = sportId;
-            include[0].required = true;
-        }
-
-        // 4. Date & Availability Filter
+        // 3. Date & Availability Filter (requires Courts)
         if (date || availability) {
-            const slotWhere = include[0].include[1].where;
-            include[0].required = true; // Must have courts
-            include[0].include[1].required = true; // Must have matching slots
+            const slotWhere = include[1].include[1].where;
+            include[1].required = true;
+            include[1].include[1].required = true;
 
             if (date) {
                 const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -145,13 +168,21 @@ class ArenaRepository {
             }
         }
 
-        // 5. Amenity Filter
+        // 4. Amenity Filter (AND Logic - Contains All)
         if (amenityIds && amenityIds.length > 0) {
-            include.push({
-                model: ArenaAmenity,
-                where: { AmenityId: { [Op.in]: Array.isArray(amenityIds) ? amenityIds : [amenityIds] } },
-                required: true
-            });
+            const ids = Array.isArray(amenityIds) ? amenityIds : amenityIds.split(',').map(id => id.trim());
+
+            // We find arenas that have ALL selected amenities using a subquery
+            where.ArenaId = {
+                [Op.in]: sequelize.literal(`(
+                    SELECT arenaId 
+                    FROM tblArenaAmenities 
+                    WHERE amenityId IN (${ids.join(',')}) 
+                    AND isActive = 1
+                    GROUP BY arenaId 
+                    HAVING COUNT(DISTINCT amenityId) = ${ids.length}
+                )`)
+            };
         }
 
         let arenas = await Arena.findAll({ where, include, attributes, order: lat && lng ? [[sequelize.literal('Distance'), 'ASC']] : [] });
@@ -179,16 +210,44 @@ class ArenaRepository {
         return results;
     }
 
+    async findSportsByArenaId(arenaId) {
+        const { Sport, ArenaSport } = require('../../models');
+        return await Sport.findAll({
+            include: [
+                {
+                    model: ArenaSport,
+                    where: { arenaId: arenaId, isActive: true },
+                    attributes: []
+                }
+            ]
+        });
+    }
+
     _formatArena(arena, isDetailed = false) {
         const arenaJson = arena.toJSON();
         const courts = arenaJson.Courts || [];
 
-        // Aggregate Sports
+        // Primary source: Associated Sports from tblArenaSports
+        const associatedSports = arenaJson.Sports || [];
+
+        // Final Sports Summary
         const sportsSet = new Set();
+        associatedSports.forEach(s => {
+            if (s.Name) sportsSet.add(s.Name);
+        });
+
+        // Also include sports from courts
         courts.forEach(c => {
             if (c.Sport && c.Sport.Name) sportsSet.add(c.Sport.Name);
         });
-        arenaJson.Sports = Array.from(sportsSet);
+
+        arenaJson.Sports = associatedSports.map(s => ({
+            SportId: s.SportId,
+            Name: s.Name,
+            SportImageUrl: s.SportImageUrl ? getFullUrl(s.SportImageUrl) : null
+        }));
+
+        arenaJson.SportsSummary = Array.from(sportsSet);
 
         // Aggregate Amenities
         const amenities = [];
@@ -213,7 +272,7 @@ class ArenaRepository {
                 const localMin = Math.min(...prices);
                 if (minPrice === null || localMin < minPrice) minPrice = localMin;
             }
-            
+
             if (c.CourtSlots) {
                 c.CourtSlots.forEach(s => {
                     allSlots.push({
@@ -265,8 +324,9 @@ class ArenaRepository {
                 { model: Sport, attributes: ['Name'] },
                 {
                     model: CourtSlot,
-                    where: { 
-                        DayName: { [Op.like]: `%${dayName}%` }
+                    where: {
+                        DayName: { [Op.like]: `%${dayName}%` },
+                        IsActive: true // Only show active slots
                     },
                     required: false
                 }

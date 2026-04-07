@@ -17,11 +17,13 @@ class AdminCourtRepository {
     }
 
     async findCourtById(id) {
+        const { CourtSlot } = require('../../models');
         return await Court.findOne({
             where: { CourtId: id },
             include: [
                 { model: Sport, attributes: ['Name'] },
-                { model: Arena, attributes: ['Name', 'City'] }
+                { model: Arena, attributes: ['Name', 'City'] },
+                { model: CourtSlot }
             ]
         });
     }

@@ -3,6 +3,7 @@ const validate = (schema, property = 'body') => {
         const { error } = schema.validate(req[property], { abortEarly: false });
         
         if (error) {
+            console.error('--- VALIDATION ERROR ---', error.details.map(err => err.message));
             const errors = error.details.map(err => ({
                 message: err.message,
                 field: err.path.join('.')

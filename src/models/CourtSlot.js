@@ -39,6 +39,10 @@ const CourtSlot = sequelize.define('CourtSlot', {
     },
     ParentSlotId: {
         type: DataTypes.INTEGER
+    },
+    IsActive: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: true
     }
 }, {
     tableName: 'tblCourtSlot',

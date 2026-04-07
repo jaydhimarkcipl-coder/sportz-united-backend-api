@@ -14,20 +14,8 @@ class BookingRepository {
                 Status: {
                     [Op.ne]: 'Cancelled'
                 },
-                [Op.or]: [
-                    {
-                        StartTime: { [Op.between]: [startTime, endTime] }
-                    },
-                    {
-                        EndTime: { [Op.between]: [startTime, endTime] }
-                    },
-                    {
-                        [Op.and]: [
-                            { StartTime: { [Op.lte]: startTime } },
-                            { EndTime: { [Op.gte]: endTime } }
-                        ]
-                    }
-                ]
+                StartTime: { [Op.lt]: endTime },
+                EndTime: { [Op.gt]: startTime }
             }
         });
     }

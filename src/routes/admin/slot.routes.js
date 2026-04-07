@@ -15,10 +15,29 @@ const blockSchema = Joi.object({
     slotId: Joi.number(),
     courtId: Joi.number(),
     dayName: Joi.string().valid('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday')
-}).or('slotId', 'courtId'); // Ensure at least one blocking method is provided
+}).or('slotId', 'courtId');
 
 const unblockSchema = Joi.object({
     slotId: Joi.number().required()
+});
+
+const slotItemSchema = Joi.object({
+    startTime: Joi.string().required(),
+    endTime: Joi.string().required(),
+    basePrice: Joi.number().required(),
+    isActive: Joi.boolean().default(true)
+});
+
+const dayScheduleSchema = Joi.object({
+    dayName: Joi.string().valid('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday').required(),
+    isActive: Joi.boolean().default(true),
+    slots: Joi.array().items(slotItemSchema).required()
+});
+
+const syncSchema = Joi.object({
+    courtId: Joi.number().required(),
+    slotDurationMin: Joi.number(),
+    days: Joi.array().items(dayScheduleSchema).required()
 });
 
 /**
@@ -26,21 +45,6 @@ const unblockSchema = Joi.object({
  * /admin/slots/block:
  *   post:
  *     summary: Block a specific slot or a full day for a court
- *     tags: [Admin Slots]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               slotId: { type: integer }
- *               courtId: { type: integer, description: "Required if blocking full day" }
- *               dayName: { type: string, description: "Required if blocking full day by courtId" }
- *     responses:
- *       200:
- *         description: Blocked
  */
 router.post('/block', validate(blockSchema), adminSlotController.block);
 
@@ -49,72 +53,73 @@ router.post('/block', validate(blockSchema), adminSlotController.block);
  * /admin/slots/unblock:
  *   post:
  *     summary: Unblock a specific slot
- *     tags: [Admin Slots]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required: [slotId]
- *             properties:
- *               slotId: { type: integer }
- *     responses:
- *       200:
- *         description: Unblocked
  */
 router.post('/unblock', validate(unblockSchema), adminSlotController.unblock);
 
 /**
  * @swagger
- * /admin/slots/generate:
+ * /admin/slots/sync:
  *   post:
- *     summary: Bulk generate slots for a court (7 days)
+ *     summary: Synchronize weekly slots for a court (Replace old generate logic)
  *     tags: [Admin Slots]
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
- *             required: [courtId, startTime, endTime, basePrice]
+ *             required: [courtId, days]
  *             properties:
  *               courtId: { type: integer }
- *               startTime: { type: string, example: "06:00" }
- *               endTime: { type: string, example: "22:00" }
- *               slotDuration: { type: integer, default: 60 }
- *               basePrice: { type: number }
- *               weekendPrice: { type: number }
+ *               slotDurationMin: { type: integer, default: 60 }
+ *               days:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     dayName: { type: string, example: "Monday" }
+ *                     isActive: { type: boolean }
+ *                     slots:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           startTime: { type: string, example: "07:30" }
+ *                           endTime: { type: string, example: "08:30" }
+ *                           basePrice: { type: number }
+ *                           isActive: { type: boolean }
  *     responses:
- *       201:
- *         description: Slots generated
+ *       200:
+ *         description: Slots synchronized
  */
-router.post('/generate', adminSlotController.generate);
+router.post('/sync', validate(syncSchema), adminSlotController.sync);
+
+/**
+ * @swagger
+ * /admin/slots/court/{courtId}:
+ *   get:
+ *     summary: Get weekly slot configuration for a court (for UI toggles)
+ *     tags: [Admin Slots]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: courtId
+ *         required: true
+ *         schema: { type: integer }
+ *     responses:
+ *       200:
+ *         description: Weekly configuration
+ */
+router.get('/court/:courtId', adminSlotController.getSlotsByCourt);
 
 /**
  * @swagger
  * /admin/slots:
  *   get:
- *     summary: List slots with filters
- *     tags: [Admin Slots]
- *     parameters:
- *       - in: query
- *         name: courtId
- *         schema: { type: integer }
- *       - in: query
- *         name: dayName
- *         schema: { type: string }
- *     responses:
- *       200:
- *         description: List of slots
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success: { type: boolean }
- *                 data: { type: array, items: { type: object } }
+ *     summary: List all raw slots with filters
  */
 router.get('/', adminSlotController.getAll);
 
@@ -127,25 +132,6 @@ const deleteSchema = Joi.object({
  * /admin/slots/court/{courtId}:
  *   delete:
  *     summary: Delete all slots for a court
- *     tags: [Admin Slots]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: courtId
- *         required: true
- *         schema: { type: integer }
- *     responses:
- *       200:
- *         description: Slots deleted successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success: { type: boolean }
- *                 message: { type: string }
- *                 count: { type: integer }
  */
 router.delete('/court/:courtId', validate(deleteSchema, 'params'), adminSlotController.deleteAll);
 

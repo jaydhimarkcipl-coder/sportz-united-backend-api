@@ -1,5 +1,5 @@
 const express = require('express');
-const { getArenas, getArenaDetails, getArenaCourts, searchArenas, getArenaSlots } = require('../../controllers/user/arena.controller');
+const { getArenas, getArenaDetails, getArenaCourts, searchArenas, getArenaSlots, getArenaSports } = require('../../controllers/user/arena.controller');
 const { verifyToken } = require('../../middlewares/auth.middleware');
 const router = express.Router();
 
@@ -101,6 +101,25 @@ router.get('/:arenaId', getArenaDetails);
  *         description: List of courts
  */
 router.get('/:arenaId/courts', verifyToken, getArenaCourts);
+
+/**
+ * @swagger
+ * /arenas/{arenaId}/sports:
+ *   get:
+ *     summary: Get all sports associated with a specific arena
+ *     tags: [Arenas]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: arenaId
+ *         required: true
+ *         schema: { type: integer }
+ *     responses:
+ *       200:
+ *         description: List of sports
+ */
+router.get('/:arenaId/sports', getArenaSports);
 
 /**
  * @swagger

@@ -9,11 +9,26 @@ class SuperArenaRepository {
     // Helper to aggregate BasePrice and Sports
     _aggregateArenaData(arenaJson) {
         const courts = arenaJson.Courts || [];
+        const associatedSports = arenaJson.Sports || [];
+        
+        // Sports Summary
         const sportsSet = new Set();
+        associatedSports.forEach(s => {
+            if (s.Name) sportsSet.add(s.Name);
+        });
+        
+        // Also include sports from courts
         courts.forEach(c => {
             if (c.Sport && c.Sport.Name) sportsSet.add(c.Sport.Name);
         });
-        arenaJson.Sports = Array.from(sportsSet);
+
+        arenaJson.Sports = associatedSports.map(s => ({
+            SportId: s.SportId,
+            Name: s.Name,
+            SportImageUrl: s.SportImageUrl ? getFullUrl(s.SportImageUrl) : null
+        }));
+
+        arenaJson.SportsSummary = Array.from(sportsSet);
 
         let minPrice = null;
         courts.forEach(c => {
@@ -29,6 +44,7 @@ class SuperArenaRepository {
         arenaJson.Courts = courts.map(c => ({
             CourtId: c.CourtId,
             CourtName: c.CourtName,
+            SportId: c.SportId,
             Sport: c.Sport ? c.Sport.Name : null
         }));
 
@@ -44,6 +60,11 @@ class SuperArenaRepository {
         const arenas = await Arena.findAll({
             include: [
                 { model: User, attributes: ['FullName'] },
+                {
+                    model: Sport,
+                    attributes: ['SportId', 'Name', 'SportImageUrl'],
+                    through: { attributes: [] }
+                },
                 {
                     model: Court,
                     attributes: ['CourtId', 'CourtName', 'SportId'],
@@ -65,6 +86,11 @@ class SuperArenaRepository {
             include: [
                 { model: User, attributes: ['FullName'] },
                 {
+                    model: Sport,
+                    attributes: ['SportId', 'Name', 'SportImageUrl'],
+                    through: { attributes: [] }
+                },
+                {
                     model: Court,
                     attributes: ['CourtId', 'CourtName', 'SportId'],
                     where: { IsDelete: false },
@@ -78,6 +104,10 @@ class SuperArenaRepository {
         });
         if (!arena) return null;
         return this._aggregateArenaData(arena.toJSON());
+    }
+
+    async findArenaInstanceById(id) {
+        return await Arena.findByPk(id);
     }
 
     async updateArena(id, data) {

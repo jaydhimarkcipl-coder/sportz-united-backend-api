@@ -118,7 +118,9 @@ const createBookingSchema = Joi.object({
     courtId: Joi.number().integer().required(),
     slotId: Joi.number().integer().required(),
     bookingDate: Joi.date().iso().required(),
-    paymentMethod: Joi.string().valid('Wallet', 'Card', 'UPI', 'NetBanking').required()
+    paymentMethod: Joi.string().valid('Wallet', 'Card', 'UPI', 'NetBanking').required(),
+    amount: Joi.number().optional(), // Allow from frontend for logging/tracking
+    TotalAmount: Joi.number().optional()
 });
 
 /**

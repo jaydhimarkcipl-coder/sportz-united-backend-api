@@ -21,7 +21,7 @@ const mapToPascal = (data) => {
     };
     const mapped = {};
     Object.keys(data).forEach(key => {
-        if (key === 'image' || key === 'profilePhoto') return; // Skip temporary fields
+        if (key === 'image') return; // Skip temporary fields
         const pascalKey = mapping[key] || key;
         mapped[pascalKey] = data[key];
     });
@@ -57,8 +57,9 @@ class SuperUserController {
             const userData = mapToPascal({ ...req.body });
 
             // Handle Profile Photo Upload (Base64 or Multer)
-            if (isBase64Image(req.body.profilePhoto)) {
-                userData.ProfilePhotoUrl = saveBase64Image(req.body.profilePhoto, 'avatar');
+            // Field name is 'image' in routes
+            if (isBase64Image(req.body.image)) {
+                userData.ProfilePhotoUrl = saveBase64Image(req.body.image, 'avatar');
             } else if (req.file) {
                 userData.ProfilePhotoUrl = `uploads/${req.file.filename}`;
             }
@@ -75,8 +76,9 @@ class SuperUserController {
             const userData = mapToPascal({ ...req.body });
 
             // Handle Profile Photo Upload (Base64 or Multer)
-            if (isBase64Image(req.body.profilePhoto)) {
-                userData.ProfilePhotoUrl = saveBase64Image(req.body.profilePhoto, 'avatar');
+            // Field name is 'image' in routes
+            if (isBase64Image(req.body.image)) {
+                userData.ProfilePhotoUrl = saveBase64Image(req.body.image, 'avatar');
             } else if (req.file) {
                 userData.ProfilePhotoUrl = `uploads/${req.file.filename}`;
             }

@@ -11,6 +11,7 @@ const BookingDetail = require('./BookingDetail');
 const BookingPlayer = require('./BookingPlayer');
 const Amenity = require('./Amenity');
 const ArenaAmenity = require('./ArenaAmenity');
+const ArenaSport = require('./ArenaSport');
 const PlayerWallet = require('./PlayerWallet');
 const Transaction = require('./Transaction');
 const RefreshToken = require('./RefreshToken');
@@ -66,6 +67,14 @@ ArenaAmenity.belongsTo(Arena, { foreignKey: 'arenaId' });
 Amenity.hasMany(ArenaAmenity, { foreignKey: 'amenityId' });
 ArenaAmenity.belongsTo(Amenity, { foreignKey: 'amenityId' });
 
+// Arena & ArenaSport
+Arena.belongsToMany(Sport, { through: ArenaSport, foreignKey: 'arenaId' });
+Sport.belongsToMany(Arena, { through: ArenaSport, foreignKey: 'sportId' });
+Arena.hasMany(ArenaSport, { foreignKey: 'arenaId' });
+ArenaSport.belongsTo(Arena, { foreignKey: 'arenaId' });
+Sport.hasMany(ArenaSport, { foreignKey: 'sportId' });
+ArenaSport.belongsTo(Sport, { foreignKey: 'sportId' });
+
 // Player & PlayerWallet
 Player.hasOne(PlayerWallet, { foreignKey: 'PlayerId' });
 PlayerWallet.belongsTo(Player, { foreignKey: 'PlayerId' });
@@ -104,6 +113,7 @@ module.exports = {
     BookingPlayer,
     Amenity,
     ArenaAmenity,
+    ArenaSport,
     PlayerWallet,
     Transaction,
     RefreshToken,

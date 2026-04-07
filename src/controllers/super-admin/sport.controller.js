@@ -24,8 +24,9 @@ class SuperSportController {
             const sportData = mapToPascal({ ...req.body });
             
             // Handle Sport Image Upload (Base64 or Multer)
-            if (isBase64Image(req.body.sportImage)) {
-                sportData.SportImageUrl = saveBase64Image(req.body.sportImage, 'sport');
+            // Field name is 'image' in routes
+            if (isBase64Image(req.body.image)) {
+                sportData.SportImageUrl = saveBase64Image(req.body.image, 'sport');
             } else if (req.file) {
                 sportData.SportImageUrl = `uploads/${req.file.filename}`;
             }
@@ -67,8 +68,9 @@ class SuperSportController {
             const sportData = mapToPascal({ ...req.body });
             
             // Handle Sport Image Upload (Base64 or Multer)
-            if (isBase64Image(req.body.sportImage)) {
-                sportData.SportImageUrl = saveBase64Image(req.body.sportImage, 'sport');
+            // Field name is 'image' in routes
+            if (isBase64Image(req.body.image)) {
+                sportData.SportImageUrl = saveBase64Image(req.body.image, 'sport');
             } else if (req.file) {
                 sportData.SportImageUrl = `uploads/${req.file.filename}`;
             }

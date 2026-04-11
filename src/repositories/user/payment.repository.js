@@ -7,23 +7,69 @@ class PaymentRepository {
 
     async getPlayerWallet(playerId) {
         return await PlayerWallet.findOne({
-            where: { PlayerId: playerId }
+            where: { PlayerId: playerId, WalletType: 'Player' } // Fetch global wallet
         });
     }
 
-    async deductFromWallet(playerId, amount, transaction) {
-        const wallet = await this.getPlayerWallet(playerId);
-        if(!wallet) throw new Error("Wallet not found");
-        if(wallet.Balance < amount) throw new Error("Insufficient funds in wallet");
-        
-        wallet.Balance -= amount;
+    async getArenaWallet(playerId, arenaId) {
+        const { Arena } = require('../../models');
+        return await PlayerWallet.findOne({
+            where: { PlayerId: playerId, ArenaId: arenaId },
+            include: [{
+                model: Arena,
+                attributes: ['Name']
+            }]
+        });
+    }
+
+    async getAllArenaWallets(playerId) {
+        const { Arena } = require('../../models');
+        const { Op } = require('sequelize');
+        return await PlayerWallet.findAll({
+            where: {
+                PlayerId: playerId,
+                ArenaId: { [Op.ne]: null },
+                Balance: { [Op.gt]: 0 }
+            },
+            include: [{
+                model: Arena,
+                attributes: ['Name']
+            }]
+        });
+    }
+
+    async deductFromWallet(playerId, amount, transaction, arenaId = null) {
+        let wallet;
+        if (arenaId) {
+            wallet = await this.getArenaWallet(playerId, arenaId);
+            console.log(`--- Wallet Deduction (Arena Specific) --- Player: ${playerId}, Arena: ${arenaId}, Required: ${amount}`);
+        } else {
+            wallet = await this.getPlayerWallet(playerId);
+            console.log(`--- Wallet Deduction (Global) --- Player: ${playerId}, Required: ${amount}`);
+        }
+
+        if (!wallet) {
+            console.error(`Wallet not found for Player: ${playerId}${arenaId ? `, Arena: ${arenaId}` : ''}`);
+            throw new Error("Wallet not found for this transaction");
+        }
+
+        const currentBalance = parseFloat(wallet.Balance) || 0;
+        const requiredAmount = parseFloat(amount) || 0;
+
+        console.log(`Current Balance: ${currentBalance}, Required: ${requiredAmount}`);
+
+        if (currentBalance < requiredAmount) {
+            throw new Error(`Insufficient funds in wallet. Required: ${requiredAmount}, Available: ${currentBalance}`);
+        }
+
+        wallet.Balance = currentBalance - requiredAmount;
         await wallet.save({ transaction });
         return wallet;
     }
 
     async addFundsToWallet(playerId, amount, transaction) {
         let wallet = await this.getPlayerWallet(playerId);
-        
+
         // Ensure amount is a number
         const numAmount = parseFloat(amount) || 0;
         console.log(`--- addFundsToWallet: PlayerId=${playerId}, Amount=${numAmount} ---`);
@@ -42,7 +88,7 @@ class PaymentRepository {
             wallet.Balance = currentBalance + numAmount;
             await wallet.save({ transaction });
         }
-        
+
         return wallet;
     }
 

@@ -23,6 +23,7 @@ const staffSchema = Joi.object({
 const updateSchema = Joi.object({
     fullName: Joi.string(),
     email: Joi.string().email(),
+    password: Joi.string().min(6).optional(),
     role: Joi.string().valid('receptionist', 'cashier', 'coach', 'arena_owner'),
     isActive: Joi.boolean()
 });

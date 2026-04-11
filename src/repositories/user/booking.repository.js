@@ -7,16 +7,23 @@ const { getFullUrl } = require('../../utils/url.util');
 
 class BookingRepository {
     async findOverlappingBookings(courtId, bookingDate, startTime, endTime) {
+        const { BookingDetail } = require('../../models');
         return await Booking.findAll({
             where: {
                 CourtId: courtId,
                 BookingDate: bookingDate,
                 Status: {
                     [Op.ne]: 'Cancelled'
+                }
+            },
+            include: [{
+                model: BookingDetail,
+                where: {
+                    StartTime: { [Op.lt]: endTime },
+                    EndTime: { [Op.gt]: startTime }
                 },
-                StartTime: { [Op.lt]: endTime },
-                EndTime: { [Op.gt]: startTime }
-            }
+                required: true // Ensures we only get Bookings that have an overlapping detail
+            }]
         });
     }
 

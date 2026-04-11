@@ -34,7 +34,13 @@ class AuthController {
     }
 
     async refreshToken(req, res, next) {
-        res.status(200).json({ success: true, token: 'new-token-stub' });
+        try {
+            const { refreshToken } = req.body;
+            const result = await authService.refresh(refreshToken);
+            res.status(200).json({ success: true, ...result });
+        } catch (error) {
+            next(error);
+        }
     }
 
     async forgotPassword(req, res, next) {

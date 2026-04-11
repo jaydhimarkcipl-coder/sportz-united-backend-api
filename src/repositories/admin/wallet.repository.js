@@ -29,9 +29,10 @@ class AdminWalletRepository {
         const transactionRecord = await Transaction.create({
             PlayerId: playerId,
             Amount: amount,
-            PaymentType: 'Credit',
+            PaymentType: 'Deposit',
             PaymentMethod: 'Offline/Admin',
             PaymentStatus: 'Success',
+            ArenaId: arenaId,
             Notes: 'Offline Wallet Top-Up via Admin',
             TopUpByArenaUserId: adminUserId
         }, { transaction: t });

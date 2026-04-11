@@ -47,6 +47,15 @@ class AdminBookingController {
             next(error);
         }
     }
+
+    async createOffline(req, res, next) {
+        try {
+            const result = await adminBookingService.createOfflineBooking(req.body, req.ownedArenaIds);
+            res.status(201).json({ success: true, data: result });
+        } catch (error) {
+            next(error);
+        }
+    }
 }
 
 module.exports = new AdminBookingController();

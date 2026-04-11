@@ -11,6 +11,27 @@ class PaymentController {
         }
     }
 
+    async getArenaBalance(req, res, next) {
+        try {
+            const playerId = req.user.id;
+            const arenaId = req.params.arenaId;
+            const balanceData = await paymentService.getArenaWalletBalance(playerId, arenaId);
+            res.status(200).json({ success: true, data: balanceData });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async getAllArenaBalances(req, res, next) {
+        try {
+            const playerId = req.user.id;
+            const balanceData = await paymentService.getAllArenaBalances(playerId);
+            res.status(200).json({ success: true, data: balanceData });
+        } catch (error) {
+            next(error);
+        }
+    }
+
     // Explicit manual payment processing if requested
     async addPayment(req, res, next) {
         try {

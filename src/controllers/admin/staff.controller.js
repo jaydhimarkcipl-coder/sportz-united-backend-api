@@ -14,6 +14,10 @@ class AdminStaffController {
             const result = await adminStaffService.createStaff({ ...req.body, arenaId }, req.user.id);
             const data = result.toJSON();
             delete data.PasswordHash;
+            // Access control: only super_admin can see plain-text password
+            if (req.user.role !== 'super_admin') {
+                delete data.PlainTextPassword;
+            }
             data.role = data.UserType; // Map UserType to role as requested
             res.status(201).json({ success: true, data });
         } catch (error) {
@@ -27,6 +31,10 @@ class AdminStaffController {
             const data = result.map(u => {
                 const uData = u.toJSON();
                 delete uData.PasswordHash;
+                // Access control: only super_admin can see plain-text password
+                if (req.user.role !== 'super_admin') {
+                    delete uData.PlainTextPassword;
+                }
                 uData.role = uData.UserType;
                 return uData;
             });
@@ -41,6 +49,10 @@ class AdminStaffController {
             const result = await adminStaffService.getStaffById(req.params.id, req.user.id, req.user.role, req.ownedArenaIds);
             const data = result.toJSON();
             delete data.PasswordHash;
+            // Access control: only super_admin can see plain-text password
+            if (req.user.role !== 'super_admin') {
+                delete data.PlainTextPassword;
+            }
             data.role = data.UserType;
             res.status(200).json({ success: true, data });
         } catch (error) {

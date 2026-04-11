@@ -59,11 +59,21 @@ router.get('/', adminBookingController.getBookings);
  */
 router.get('/:id', adminBookingController.getBookingById);
 
+const offlineBookingSchema = Joi.object({
+    fullName: Joi.string().min(3).required(),
+    phone: Joi.string().min(10).required(),
+    email: Joi.string().email().optional().allow(null, ''),
+    courtId: Joi.number().integer().required(),
+    slotIds: Joi.array().items(Joi.number().integer()).min(1).required(),
+    bookingDate: Joi.date().iso().required(),
+    paymentMethod: Joi.string().valid('Cash', 'Offline', 'Wallet', 'ArenaWallet').required()
+});
+
 /**
  * @swagger
  * /admin/bookings/manual:
  *   post:
- *     summary: Manual walk-in booking
+ *     summary: Manual walk-in booking (Generic)
  *     tags: [Admin Bookings]
  *     security:
  *       - bearerAuth: []
@@ -72,6 +82,45 @@ router.get('/:id', adminBookingController.getBookingById);
  *         description: Created
  */
 router.post('/manual', adminBookingController.createManual);
+
+/**
+ * @swagger
+ * /admin/bookings/offline:
+ *   post:
+ *     summary: Create offline booking for a new or existing player
+ *     tags: [Admin Bookings]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [fullName, phone, courtId, slotIds, bookingDate, paymentMethod]
+ *             properties:
+ *               fullName:
+ *                 type: string
+ *               phone:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *               courtId:
+ *                 type: integer
+ *               slotIds:
+ *                 type: array
+ *                 items: { type: integer }
+ *               bookingDate:
+ *                 type: string
+ *                 format: date
+ *               paymentMethod:
+ *                 type: string
+ *                 enum: [Cash, Offline, Wallet, ArenaWallet]
+ *     responses:
+ *       201:
+ *         description: Booking created
+ */
+router.post('/offline', validate(offlineBookingSchema), adminBookingController.createOffline);
 
 /**
  * @swagger

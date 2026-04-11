@@ -40,6 +40,10 @@ class CourtRepository {
     async findSlotById(slotId) {
         return await CourtSlot.findByPk(slotId);
     }
+
+    async findCourtById(courtId, transaction = null) {
+        return await Court.findByPk(courtId, { transaction });
+    }
 }
 
 module.exports = new CourtRepository();

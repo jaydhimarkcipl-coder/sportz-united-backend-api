@@ -12,19 +12,40 @@ const addPaymentSchema = Joi.object({
     paymentMethod: Joi.string().required()
 });
 
+router.get('/wallet/balance', verifyToken, getBalance);
+
 /**
  * @swagger
- * /payments/wallet/balance:
+ * /payments/wallet/arena/{arenaId}:
  *   get:
- *     summary: Get logged-in player's wallet balance
+ *     summary: Get logged-in player's balance for a specific arena
+ *     tags: [Payments]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: arenaId
+ *         required: true
+ *         schema: { type: integer }
+ *     responses:
+ *       200:
+ *         description: Arena specific balance
+ */
+router.get('/wallet/arena/:arenaId', verifyToken, require('../../controllers/user/payment.controller').getArenaBalance);
+
+/**
+ * @swagger
+ * /payments/wallet/arenas:
+ *   get:
+ *     summary: Get all arena balances for the logged-in player (non-zero only)
  *     tags: [Payments]
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Wallet balance
+ *         description: List of arena balances
  */
-router.get('/wallet/balance', verifyToken, getBalance);
+router.get('/wallet/arenas', verifyToken, require('../../controllers/user/payment.controller').getAllArenaBalances);
 
 /**
  * @swagger

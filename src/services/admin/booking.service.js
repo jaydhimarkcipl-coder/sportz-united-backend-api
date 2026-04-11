@@ -69,6 +69,67 @@ class AdminBookingService {
         // Stubbing for architecture
         return { message: 'Manual booking created successfully', bookingData };
     }
+
+    async createOfflineBooking(data, ownedArenaIds) {
+        const authRepo = require('../../repositories/user/auth.repository');
+        const userBookingService = require('../user/booking.service');
+        const courtRepo = require('../../repositories/user/court.repository');
+        const { Arena } = require('../../models');
+
+        const { fullName, phone, email, courtId, slotIds, bookingDate, paymentMethod } = data;
+
+        // 1. Ownership Validation
+        const court = await courtRepo.findCourtById(courtId);
+        if (!court) throw { statusCode: 404, message: 'Court not found' };
+        
+        if (ownedArenaIds && !ownedArenaIds.includes(court.ArenaId)) {
+            throw { statusCode: 403, message: 'Access denied to this arena' };
+        }
+
+        // 2. Find or Create Player
+        let player = await authRepo.findPlayerByPhone(phone);
+        if (!player) {
+            player = await authRepo.createPlayer({
+                FullName: fullName,
+                Phone: phone,
+                Email: email || null,
+                IsActive: true,
+                IsVerified: false,
+                RegisteredViaGuestInvite: true
+            });
+        }
+
+        // 3. Perform Booking using shared logic
+        const booking = await userBookingService.createBooking(
+            player.PlayerId,
+            courtId,
+            slotIds,
+            bookingDate,
+            paymentMethod
+        );
+
+        // 4. Generate Invitation Text
+        const arena = await Arena.findByPk(court.ArenaId);
+        const arenaName = arena ? arena.Name : 'the arena';
+        
+        const invitationText = `🎾 *Booking Confirmed!* 🎾\n\n` +
+            `Hello ${player.FullName},\n` +
+            `Your booking at *${arenaName}* is successful.\n` +
+            `📅 Date: ${bookingDate}\n` +
+            `🏟️ Court: ${court.CourtName}\n\n` +
+            `Download the SportzUnited App to see your QR code and manage your booking.\n` +
+            `Show this message at the counter upon arrival.`;
+
+        return {
+            booking,
+            player: {
+                PlayerId: player.PlayerId,
+                FullName: player.FullName,
+                Phone: player.Phone
+            },
+            invitationText
+        };
+    }
 }
 
 module.exports = new AdminBookingService();

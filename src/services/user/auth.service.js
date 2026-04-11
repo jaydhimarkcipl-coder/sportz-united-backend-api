@@ -1,7 +1,9 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const authRepo = require('../../repositories/user/auth.repository');
+const refreshTokenRepo = require('../../repositories/user/refresh-token.repository');
 const { getFullUrl } = require('../../utils/url.util');
+const crypto = require('crypto');
 
 class AuthService {
     async register(playerData) {
@@ -18,8 +20,10 @@ class AuthService {
             IsVerified: false
         });
 
-        const token = this._generateToken(player);
-        return { token, player };
+        const accessToken = this._generateAccessToken(player);
+        const refreshToken = await this._generateRefreshToken(player.PlayerId);
+
+        return { accessToken, refreshToken, player };
     }
 
     async login(email, password) {
@@ -29,8 +33,10 @@ class AuthService {
             throw { statusCode: 401, message: 'Invalid credentials' };
         }
 
-        const token = this._generateToken(player);
-        return { token, player };
+        const accessToken = this._generateAccessToken(player);
+        const refreshToken = await this._generateRefreshToken(player.PlayerId);
+
+        return { accessToken, refreshToken, player };
     }
 
     async getMe(userId, type) {
@@ -87,17 +93,44 @@ class AuthService {
         delete global.otpStore[phone];
 
         const player = await authRepo.findPlayerByPhone(phone);
-        const token = this._generateToken(player);
+        const accessToken = this._generateAccessToken(player);
+        const refreshToken = await this._generateRefreshToken(player.PlayerId);
 
-        return { token, player, isNewUser };
+        return { accessToken, refreshToken, player, isNewUser };
     }
 
-    _generateToken(player) {
+    _generateAccessToken(player) {
         return jwt.sign(
             { id: player.PlayerId, type: 'Player', email: player.Email },
             process.env.JWT_SECRET,
             { expiresIn: '1d' }
         );
+    }
+
+    async _generateRefreshToken(playerId) {
+        const token = crypto.randomBytes(40).toString('hex');
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + 7); // 7 days
+        
+        const expiresAtStr = expiresAt.toISOString().slice(0, 19).replace('T', ' ');
+
+        await refreshTokenRepo.createToken(playerId, token, expiresAtStr);
+        return token;
+    }
+
+    async refresh(oldToken) {
+        const refreshTokenRecord = await refreshTokenRepo.findToken(oldToken);
+        if (!refreshTokenRecord) {
+            throw { statusCode: 401, message: 'Invalid or expired refresh token' };
+        }
+
+        const player = await authRepo.findPlayerById(refreshTokenRecord.PlayerId);
+        if (!player) {
+            throw { statusCode: 401, message: 'Player not found' };
+        }
+
+        const newAccessToken = this._generateAccessToken(player);
+        return { accessToken: newAccessToken };
     }
 }
 

@@ -1,13 +1,17 @@
 const express = require('express');
 const router = express.Router();
 const Joi = require('joi');
-const { login, register, getMe, logout, sendOtp, loginWithOtp } = require('../../controllers/user/auth.controller');
+const { login, register, getMe, logout, sendOtp, loginWithOtp, refreshToken } = require('../../controllers/user/auth.controller');
 const validate = require('../../middlewares/validate.middleware');
 const { verifyToken } = require('../../middlewares/auth.middleware');
 
 const otpSchema = Joi.object({
     phone: Joi.string().required(),
     otp: Joi.string().length(6)
+});
+
+const refreshTokenSchema = Joi.object({
+    refreshToken: Joi.string().required()
 });
 
 const sendOtpSchema = Joi.object({
@@ -117,7 +121,7 @@ router.post('/logout', verifyToken, logout);
  *       200:
  *         description: New token
  */
-router.post('/refresh-token', (req, res) => res.json({ success: true, token: 'new-token-stub' }));
+router.post('/refresh-token', validate(refreshTokenSchema), refreshToken);
 
 /**
  * @swagger

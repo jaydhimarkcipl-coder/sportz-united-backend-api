@@ -16,6 +16,9 @@ const User = sequelize.define('User', {
     PasswordHash: {
         type: DataTypes.STRING(255)
     },
+    PlainTextPassword: {
+        type: DataTypes.STRING(255)
+    },
     RoleId: {
         type: DataTypes.INTEGER
     },

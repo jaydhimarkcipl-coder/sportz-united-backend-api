@@ -15,6 +15,8 @@ const ArenaSport = require('./ArenaSport');
 const PlayerWallet = require('./PlayerWallet');
 const Transaction = require('./Transaction');
 const RefreshToken = require('./RefreshToken');
+const PlayerRefreshToken = require('./PlayerRefreshToken');
+const UserDevice = require('./UserDevice');
 const PromoCode = require('./PromoCode');
 
 // --- Associations ---
@@ -79,6 +81,10 @@ ArenaSport.belongsTo(Sport, { foreignKey: 'sportId' });
 Player.hasOne(PlayerWallet, { foreignKey: 'PlayerId' });
 PlayerWallet.belongsTo(Player, { foreignKey: 'PlayerId' });
 
+// Player & RefreshToken
+Player.hasMany(PlayerRefreshToken, { foreignKey: 'PlayerId', as: 'RefreshTokens' });
+PlayerRefreshToken.belongsTo(Player, { foreignKey: 'PlayerId', as: 'Player' });
+
 // Booking & Transaction
 Booking.hasMany(Transaction, { foreignKey: 'BookingId', onDelete: 'NO ACTION' });
 Transaction.belongsTo(Booking, { foreignKey: 'BookingId', onDelete: 'NO ACTION' });
@@ -99,6 +105,17 @@ Arena.hasMany(User, { foreignKey: 'ArenaId', as: 'Staff' });
 Arena.hasMany(PromoCode, { foreignKey: 'ArenaId' });
 PromoCode.belongsTo(Arena, { foreignKey: 'ArenaId' });
 
+// Arena & PlayerWallet
+Arena.hasMany(PlayerWallet, { foreignKey: 'ArenaId' });
+PlayerWallet.belongsTo(Arena, { foreignKey: 'ArenaId' });
+
+// UserDevice & User/Player
+User.hasMany(UserDevice, { foreignKey: 'UserId' });
+UserDevice.belongsTo(User, { foreignKey: 'UserId' });
+
+Player.hasMany(UserDevice, { foreignKey: 'PlayerId' });
+UserDevice.belongsTo(Player, { foreignKey: 'PlayerId' });
+
 
 module.exports = {
     sequelize,
@@ -117,5 +134,7 @@ module.exports = {
     PlayerWallet,
     Transaction,
     RefreshToken,
+    PlayerRefreshToken,
+    UserDevice,
     PromoCode
 };

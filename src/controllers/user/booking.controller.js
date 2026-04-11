@@ -4,11 +4,14 @@ const { getFullUrl } = require('../../utils/url.util');
 class BookingController {
     async createBooking(req, res, next) {
         try {
-            const { courtId, slotId, bookingDate, paymentMethod } = req.body;
+            const { courtId, slotId, slotIds, bookingDate, paymentMethod } = req.body;
+            // Normalizing slot input into an array
+            const finalSlotIds = Array.isArray(slotIds) ? slotIds : (slotId ? [slotId] : []);
+            
             // Extract playerId from the verified JWT token
             const playerId = req.user.id;
 
-            const booking = await bookingService.createBooking(playerId, courtId, slotId, bookingDate, paymentMethod);
+            const booking = await bookingService.createBooking(playerId, courtId, finalSlotIds, bookingDate, paymentMethod);
             
             // Add QR code URL to the response if available
             // Note: booking might need to be re-fetched or we manually construct the URL

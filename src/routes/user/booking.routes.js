@@ -116,12 +116,13 @@ router.post('/invite', (req, res) => res.json({ success: true, message: 'Invites
 
 const createBookingSchema = Joi.object({
     courtId: Joi.number().integer().required(),
-    slotId: Joi.number().integer().required(),
+    slotId: Joi.number().integer().optional(),
+    slotIds: Joi.array().items(Joi.number().integer()).optional(),
     bookingDate: Joi.date().iso().required(),
-    paymentMethod: Joi.string().valid('Wallet', 'Card', 'UPI', 'NetBanking').required(),
+    paymentMethod: Joi.string().valid('Wallet', 'ArenaWallet', 'Card', 'UPI', 'NetBanking', 'Cash', 'Offline').required(),
     amount: Joi.number().optional(), // Allow from frontend for logging/tracking
     TotalAmount: Joi.number().optional()
-});
+}).or('slotId', 'slotIds');
 
 /**
  * @swagger
@@ -137,12 +138,17 @@ const createBookingSchema = Joi.object({
  *         application/json:
  *           schema:
  *             type: object
- *             required: [courtId, slotId, bookingDate, paymentMethod]
+ *             required: [courtId, bookingDate, paymentMethod]
  *             properties:
  *               courtId:
  *                 type: integer
  *               slotId:
  *                 type: integer
+ *                 description: "Single slot ID (deprecated, use slotIds)"
+ *               slotIds:
+ *                 type: array
+ *                 items: { type: integer }
+ *                 description: "Array of slot IDs for multi-slot selection"
  *               bookingDate:
  *                 type: string
  *                 format: date

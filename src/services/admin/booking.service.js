@@ -3,17 +3,18 @@ const { sequelize } = require('../../config/database');
 
 class AdminBookingService {
     async getAllBookings(ownedArenaIds, queryOptions) {
-        const filters = { courtWhere: {}, bookingWhere: {} };
+        const filters = { courtWhere: {}, bookingWhere: {}, transactionWhere: {} };
         
         // Apply RBAC Arena Filtering
         if (ownedArenaIds) {
             filters.courtWhere.ArenaId = ownedArenaIds;
         }
 
-        // Apply Custom Query Filters (date, status, etc)
+        // Apply Custom Query Filters (date, status, paymentMethod, etc)
         if (queryOptions.date) filters.bookingWhere.BookingDate = queryOptions.date;
         if (queryOptions.status) filters.bookingWhere.Status = queryOptions.status;
         if (queryOptions.courtId) filters.bookingWhere.CourtId = queryOptions.courtId;
+        if (queryOptions.paymentMethod) filters.transactionWhere.PaymentMethod = queryOptions.paymentMethod;
 
         return await adminBookingRepo.findAllBookings(filters);
     }
@@ -39,6 +40,7 @@ class AdminBookingService {
     }
 
     async cancelBookingWithRefund(bookingId, ownedArenaIds) {
+        const paymentService = require('../user/payment.service');
         const booking = await this.getBookingById(bookingId, ownedArenaIds);
         
         if (['Cancelled', 'Refunded'].includes(booking.Status)) {
@@ -47,17 +49,21 @@ class AdminBookingService {
 
         const t = await sequelize.transaction();
         try {
-            // Update booking status
+            // 1. Update booking status
             await adminBookingRepo.updateBooking(bookingId, { Status: 'Cancelled' }, { transaction: t });
             
-            // TODO: Process Refund via updating player wallet (Module 6)
-            // Example:
-            // await walletService.addFunds(booking.PlayerId, booking.NetAmount, 'Refund for booking ' + bookingId, t);
+            // 2. Process Refund via updating player wallet
+            await paymentService.refundBooking({
+                BookingId: booking.BookingId,
+                PlayerId: booking.PlayerId,
+                Amount: booking.NetAmount,
+                Notes: `Admin Cancellation - Booking #${booking.BookingId}`
+            }, t);
 
             await t.commit();
             return { message: 'Booking cancelled and refund processed to wallet' };
         } catch (error) {
-            await t.rollback();
+            if (t && !t.finished) await t.rollback();
             throw error;
         }
     }

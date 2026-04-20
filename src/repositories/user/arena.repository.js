@@ -139,8 +139,8 @@ class ArenaRepository {
             },
             {
                 model: ArenaAmenity,
-                attributes: ['amenityId'],
-                include: [{ model: Amenity, attributes: ['name', 'iconUrl'] }],
+                attributes: ['amenityId', 'isActive'],
+                include: [{ model: Amenity, attributes: ['name', 'isActive', 'isDelete'] }],
                 required: false
             }
         ];

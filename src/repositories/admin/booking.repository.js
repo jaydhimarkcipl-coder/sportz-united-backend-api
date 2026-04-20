@@ -3,7 +3,10 @@ const { Op } = require('sequelize');
 
 class AdminBookingRepository {
     async findAllBookings(filters = {}) {
+        const { Transaction } = require('../../models');
         const courtWhere = filters.courtWhere || {};
+        const transactionWhere = filters.transactionWhere || {};
+        
         return await Booking.findAll({
             where: filters.bookingWhere || {},
             include: [
@@ -16,9 +19,14 @@ class AdminBookingRepository {
                     model: Player,
                     as: 'Player',
                     attributes: ['PlayerId', 'FullName', 'Phone', 'Email']
+                },
+                {
+                    model: Transaction,
+                    where: transactionWhere,
+                    required: !!Object.keys(transactionWhere).length // Only inner join if we are filtering by transaction properties
                 }
             ],
-            order: [['BookingDate', 'DESC'], ['StartTime', 'DESC']]
+            order: [['BookingDate', 'DESC']]
         });
     }
 

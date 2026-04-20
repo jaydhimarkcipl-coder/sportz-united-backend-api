@@ -28,6 +28,7 @@ const adminArenaAmenityRoutes = require('./routes/admin/arena-amenity.routes');
 const publicAmenityRoutes = require('./routes/user/amenity.routes');
 const superBookingRoutes = require('./routes/super-admin/booking.routes');
 const publicNotificationRoutes = require('./routes/user/notification.routes');
+const adminPlayerRoutes = require('./routes/admin/player.routes');
 
 // Import error handler
 const errorHandler = require('./middlewares/error.middleware');
@@ -59,6 +60,7 @@ app.use('/api/admin/memberships', adminMemRoutes); // Admin Memberships module
 app.use('/api/admin/reports', adminReportRoutes); // Admin Reports module
 app.use('/api/admin/staff', adminStaffRoutes); // Admin Staff module
 app.use('/api/admin/notifications', adminNotifRoutes); // Admin Notifications module
+app.use('/api/admin/players', adminPlayerRoutes); // Admin Players module
 app.use('/api/super-admin/sports', superSportRoutes); // Super Admin Sports
 app.use('/api/super-admin/users', superUserRoutes);   // Super Admin Users
 app.use('/api/sports', sportRoutes); // Public Sports List

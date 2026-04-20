@@ -22,6 +22,10 @@ const options = {
         url: 'http://13.203.242.238:4001/api',
         description: 'Internal  server',
       },
+      {
+        url: 'https://api.sportzunited.com/api',
+        description: 'Production server',
+      },
     ],
     components: {
       securitySchemes: {

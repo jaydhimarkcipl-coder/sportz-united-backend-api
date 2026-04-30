@@ -4,6 +4,7 @@ const authRepo = require('../../repositories/user/auth.repository');
 const refreshTokenRepo = require('../../repositories/user/refresh-token.repository');
 const { getFullUrl } = require('../../utils/url.util');
 const crypto = require('crypto');
+const smsUtil = require('../../utils/sms.util');
 
 class AuthService {
     async register(playerData) {
@@ -68,16 +69,23 @@ class AuthService {
             });
         }
 
-        // Using fixed OTP for now
-        const otp = '123456';
+        // Generate random 6-digit OTP
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-        // In a real app, send via SMS (AWS SNS, Twilio, etc.)
+        // Send via SMS
+        try {
+            await smsUtil.sendSms(phone, 'otp', { otp });
+        } catch (error) {
+            console.error('Failed to send SMS:', error);
+            // Even if SMS fails, we'll continue for now in dev, but in prod we might want to throw
+        }
+
         console.log(`OTP for ${phone}: ${otp}`);
 
         // Save OTP to some store (Redis or Memory) with expiry. 
         // For simplicity, I'll use a global map (NOT FOR PRODUCTION)
         global.otpStore = global.otpStore || {};
-        global.otpStore[phone] = { otp, expires: Date.now() + 300000, isNewUser }; // 5 mins
+        global.otpStore[phone] = { otp, expires: Date.now() + 600000, isNewUser }; // 10 mins as per user request
 
         return { message: 'OTP sent successfully', otp }; // Returning OTP for testing convenience
     }

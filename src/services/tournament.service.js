@@ -303,6 +303,82 @@ class TournamentService {
             registrations: transformedRegistrations
         };
     }
+
+    async getFullTournamentDetailsByRegistrationId(registrationId) {
+        const registration = await tournamentRepo.findRegistrationFullDetails(registrationId);
+        if (!registration) {
+            throw { statusCode: 404, message: 'Registration not found' };
+        }
+
+        const regData = registration.toJSON();
+        const tournament = regData.Tournament || {};
+        const sport = tournament.Sport || {};
+        const arena = tournament.Arena || {};
+        const participants = regData.Participants || [];
+
+        // Format Image URLs
+        if (tournament.BannerUrl) tournament.BannerUrl = getFullUrl(tournament.BannerUrl);
+        if (tournament.OrganizerLogoUrl) tournament.OrganizerLogoUrl = getFullUrl(tournament.OrganizerLogoUrl);
+        participants.forEach(p => {
+            if (p.PhotoUrl) p.PhotoUrl = getFullUrl(p.PhotoUrl);
+        });
+
+        return {
+            registration: {
+                RegistrationId: regData.RegistrationId,
+                Status: regData.Status,
+                RegistrationDate: regData.RegistrationDate,
+                PaymentStatus: regData.PaymentStatus,
+                Category: regData.Category,
+                PaymentTransactionId: regData.PaymentTransactionId
+            },
+            tournament: {
+                TournamentId: tournament.TournamentId,
+                TournamentCode: tournament.TournamentCode,
+                Name: tournament.Name,
+                Description: tournament.Description,
+                Sport: sport.Name || null,
+                StartDate: tournament.StartDate,
+                EndDate: tournament.EndDate,
+                RegistrationStartDate: tournament.RegistrationStartDate,
+                RegistrationEndDate: tournament.RegistrationEndDate,
+                Status: tournament.Status,
+                EntryFee: tournament.EntryFee,
+                MaxParticipants: tournament.MaxParticipants,
+                Rules: "Check tournament description for rules and regulations.", // Placeholder as not in DB
+                Prizes: "Check tournament description for prize information."   // Placeholder as not in DB
+            },
+            team: {
+                TeamId: regData.RegistrationId,
+                TeamName: regData.TeamName || 'Unnamed Team'
+            },
+            players: participants,
+            matches: [], // Model currently not in database
+            standings: [], // Model currently not in database
+            venue: {
+                Name: arena.Name || tournament.Venue || 'TBA',
+                Address: arena.Address || null,
+                City: arena.City || null,
+                State: arena.State || null
+            },
+            organizer: {
+                Name: tournament.OrganizerName || 'Tournament Organizer',
+                ContactName: tournament.ContactName,
+                ContactMobile: tournament.ContactMobile,
+                ContactEmail: tournament.ContactEmail,
+                LogoUrl: tournament.OrganizerLogoUrl
+            },
+            payment: {
+                Status: regData.PaymentStatus,
+                TransactionId: regData.PaymentTransactionId,
+                Amount: tournament.EntryFee
+            },
+            additionalDetails: {
+                SportDetails: sport,
+                ArenaDetails: arena
+            }
+        };
+    }
 }
 
 module.exports = new TournamentService();

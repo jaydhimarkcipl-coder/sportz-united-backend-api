@@ -94,6 +94,24 @@ class TournamentController {
             next(error);
         }
     }
+
+    async getFullTournamentDetailsByRegistrationId(req, res, next) {
+        try {
+            const { registrationId } = req.params;
+            if (!registrationId) {
+                throw { statusCode: 400, message: 'Registration ID is required' };
+            }
+
+            const data = await tournamentService.getFullTournamentDetailsByRegistrationId(registrationId);
+            res.status(200).json({
+                success: true,
+                message: 'Tournament and registration details fetched successfully.',
+                data: data
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
 }
 
 module.exports = new TournamentController();

@@ -95,6 +95,24 @@ class TournamentRepository {
             order: [['RegistrationDate', 'DESC']]
         });
     }
+
+    async findRegistrationFullDetails(registrationId) {
+        return await TournamentRegistration.findByPk(registrationId, {
+            include: [
+                {
+                    model: Tournament,
+                    include: [
+                        { model: Sport },
+                        { model: Arena }
+                    ]
+                },
+                {
+                    model: TournamentParticipant,
+                    as: 'Participants'
+                }
+            ]
+        });
+    }
 }
 
 module.exports = new TournamentRepository();

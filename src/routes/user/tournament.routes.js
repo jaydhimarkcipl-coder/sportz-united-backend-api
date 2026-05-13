@@ -60,6 +60,27 @@ router.get('/my-registrations', verifyToken, tournamentController.getMyRegistrat
 
 /**
  * @swagger
+ * /tournaments/registration/{registrationId}/full-details:
+ *   get:
+ *     summary: Get full tournament details by Registration ID
+ *     tags: [Tournaments]
+ *     parameters:
+ *       - in: path
+ *         name: registrationId
+ *         required: true
+ *         description: Tournament Registration ID
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Comprehensive tournament and registration details
+ *       404:
+ *         description: Registration not found
+ */
+router.get('/registration/:registrationId/full-details', tournamentController.getFullTournamentDetailsByRegistrationId);
+
+/**
+ * @swagger
  * /tournaments/{id}:
  *   get:
  *     summary: Get tournament details

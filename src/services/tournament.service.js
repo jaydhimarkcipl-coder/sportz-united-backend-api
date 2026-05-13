@@ -1,6 +1,7 @@
 const tournamentRepo = require('../repositories/tournament.repository');
 const { formatDateTime } = require('../utils/time.util');
 const { saveBase64Image, isBase64Image } = require('../utils/file.util');
+const { sendWhatsAppMessage } = require('../utils/whatsapp.util');
 const { TournamentRegistration, TournamentParticipant, Player, sequelize } = require('../models');
 const { Op } = require('sequelize');
 
@@ -162,6 +163,27 @@ class TournamentService {
 
             await t.commit();
             
+            // 3. Send WhatsApp Notifications (Async, don't wait)
+            try {
+                const startDate = new Date(tournament.StartDate).toLocaleDateString('en-GB'); // DD/MM/YYYY
+                const venue = tournament.Venue || (tournament.Arena ? tournament.Arena.Name : 'Tournament Venue');
+
+                participantsData.forEach(p => {
+                    if (p.Phone) {
+                        // Variables: 1: Name, 2: Tournament Name, 3: Date, 4: Venue
+                        const whatsappData = [
+                            p.FullName,
+                            tournament.Name,
+                            startDate,
+                            venue
+                        ];
+                        sendWhatsAppMessage(p.Phone, 'tournament_participate', whatsappData);
+                    }
+                });
+            } catch (notifError) {
+                console.error('Error in sending WhatsApp notifications:', notifError);
+            }
+
             // Return registration with participants
             const registrationWithParticipants = await TournamentRegistration.findByPk(registration.RegistrationId, {
                 include: ['Participants']

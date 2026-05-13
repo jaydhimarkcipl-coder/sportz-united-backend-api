@@ -21,6 +21,7 @@ const PromoCode = require('./PromoCode');
 const Tournament = require('./Tournament');
 const TournamentRegistration = require('./TournamentRegistration');
 const TournamentParticipant = require('./TournamentParticipant');
+const WhatsAppLog = require('./WhatsAppLog');
 
 // --- Associations ---
 
@@ -171,5 +172,6 @@ module.exports = {
     PromoCode,
     Tournament,
     TournamentRegistration,
-    TournamentParticipant
+    TournamentParticipant,
+    WhatsAppLog
 };

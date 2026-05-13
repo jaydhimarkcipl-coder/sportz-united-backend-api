@@ -24,4 +24,42 @@ router.use(requireArenaOwnership);
  */
 router.get('/', adminPlayerController.getPlayers);
 
+/**
+ * @swagger
+ * /admin/players/all:
+ *   get:
+ *     summary: Search all players in the system
+ *     tags: [Admin Players]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: search
+ *         schema: { type: string }
+ *         description: Search by name, email, or phone
+ *     responses:
+ *       200:
+ *         description: Success
+ */
+router.get('/all', adminPlayerController.getAllUsers);
+
+/**
+ * @swagger
+ * /admin/players/check/{phone}:
+ *   get:
+ *     summary: Check if a player exists by mobile number and return details
+ *     tags: [Admin Players]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: phone
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: Success
+ */
+router.get('/check/:phone', adminPlayerController.checkPlayerByPhone);
+
 module.exports = router;

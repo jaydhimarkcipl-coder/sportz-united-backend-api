@@ -39,6 +39,23 @@ class AdminPlayerRepository {
 
         return uniquePlayers;
     }
+
+    async findAllPlayers(search) {
+        const where = {};
+        if (search) {
+            where[Op.or] = [
+                { FullName: { [Op.like]: `%${search}%` } },
+                { Email: { [Op.like]: `%${search}%` } },
+                { Phone: { [Op.like]: `%${search}%` } }
+            ];
+        }
+        return await Player.findAll({
+            where,
+            attributes: ['PlayerId', 'FullName', 'Phone', 'Email', 'ProfilePhotoUrl', 'CreatedDate'],
+            order: [['FullName', 'ASC']],
+            limit: 100 // Protection for large datasets
+        });
+    }
 }
 
 module.exports = new AdminPlayerRepository();

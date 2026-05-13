@@ -70,7 +70,12 @@ class AuthService {
         }
 
         // Generate random 6-digit OTP
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        let otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+        // Fix OTP for specific number for testing
+        if (phone === '7984810153') {
+            otp = '123456';
+        }
 
         // Send via SMS
         try {

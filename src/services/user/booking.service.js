@@ -51,7 +51,7 @@ class BookingService {
             if (!overallStartTime || formattedStartTime < overallStartTime) overallStartTime = formattedStartTime;
             if (!overallEndTime || formattedEndTime > overallEndTime) overallEndTime = formattedEndTime;
         }
-        
+
         let transaction;
         try {
             transaction = await sequelize.transaction();
@@ -94,7 +94,7 @@ class BookingService {
                 const playerTokens = await deviceRepo.getTokensByPlayerId(playerId);
                 const player = await Player.findByPk(playerId);
                 const arena = await Arena.findByPk(arenaId);
-                
+
                 if (playerTokens.length > 0) {
                     await fcmUtil.sendToMultipleDevices(playerTokens, {
                         title: 'Booking Confirmed! ⚽',
@@ -131,7 +131,7 @@ class BookingService {
         const booking = await bookingRepo.findBookingById(bookingId);
         if (!booking) throw { statusCode: 404, message: 'Booking not found' };
         if (booking.Status === 'Cancelled') throw { statusCode: 400, message: 'Booking already cancelled' };
-        
+
         let transaction;
         try {
             transaction = await sequelize.transaction();
@@ -165,7 +165,7 @@ class BookingService {
                 const court = await courtRepo.findCourtById(booking.CourtId);
                 const arena = await Arena.findByPk(court.ArenaId);
                 const player = await Player.findByPk(booking.PlayerId);
-                
+
                 if (arena && arena.OwnerUserId) {
                     const ownerTokens = await deviceRepo.getTokensByUserId(arena.OwnerUserId);
                     if (ownerTokens.length > 0) {
@@ -190,7 +190,7 @@ class BookingService {
     async modifyBooking(bookingId, updateData) {
         const booking = await bookingRepo.findBookingById(bookingId);
         if (!booking) throw { statusCode: 404, message: 'Booking not found' };
-        
+
         return await booking.update(updateData);
     }
 }

@@ -32,4 +32,10 @@ const formatTimeToHHMMSS = (t) => {
     return t;
 };
 
-module.exports = { formatTimeToHHMMSS };
+const formatDateTime = (d) => {
+    if (!d) return null;
+    const date = new Date(d);
+    return date.toISOString().slice(0, 19).replace('T', ' ');
+};
+
+module.exports = { formatTimeToHHMMSS, formatDateTime };

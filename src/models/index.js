@@ -18,6 +18,9 @@ const RefreshToken = require('./RefreshToken');
 const PlayerRefreshToken = require('./PlayerRefreshToken');
 const UserDevice = require('./UserDevice');
 const PromoCode = require('./PromoCode');
+const Tournament = require('./Tournament');
+const TournamentRegistration = require('./TournamentRegistration');
+const TournamentParticipant = require('./TournamentParticipant');
 
 // --- Associations ---
 
@@ -116,6 +119,35 @@ UserDevice.belongsTo(User, { foreignKey: 'UserId' });
 Player.hasMany(UserDevice, { foreignKey: 'PlayerId' });
 UserDevice.belongsTo(Player, { foreignKey: 'PlayerId' });
 
+// --- Tournament Associations ---
+
+// Sport & Tournament
+Sport.hasMany(Tournament, { foreignKey: 'SportId' });
+Tournament.belongsTo(Sport, { foreignKey: 'SportId' });
+
+// Arena & Tournament
+Arena.hasMany(Tournament, { foreignKey: 'ArenaId' });
+Tournament.belongsTo(Arena, { foreignKey: 'ArenaId' });
+
+// Tournament & Registration
+Tournament.hasMany(TournamentRegistration, { foreignKey: 'TournamentId' });
+TournamentRegistration.belongsTo(Tournament, { foreignKey: 'TournamentId' });
+
+// Player & Registration
+Player.hasMany(TournamentRegistration, { foreignKey: 'PlayerId' });
+TournamentRegistration.belongsTo(Player, { foreignKey: 'PlayerId' });
+
+User.hasMany(Tournament, { foreignKey: 'CreatedBy' });
+Tournament.belongsTo(User, { foreignKey: 'CreatedBy', as: 'Creator' });
+
+// TournamentRegistration & Participant
+TournamentRegistration.hasMany(TournamentParticipant, { foreignKey: 'RegistrationId', as: 'Participants' });
+TournamentParticipant.belongsTo(TournamentRegistration, { foreignKey: 'RegistrationId' });
+
+// Player & Participant
+Player.hasMany(TournamentParticipant, { foreignKey: 'PlayerId' });
+TournamentParticipant.belongsTo(Player, { foreignKey: 'PlayerId', as: 'Player' });
+
 
 module.exports = {
     sequelize,
@@ -136,5 +168,8 @@ module.exports = {
     RefreshToken,
     PlayerRefreshToken,
     UserDevice,
-    PromoCode
+    PromoCode,
+    Tournament,
+    TournamentRegistration,
+    TournamentParticipant
 };

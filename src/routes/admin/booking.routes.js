@@ -124,6 +124,28 @@ router.post('/offline', validate(offlineBookingSchema), adminBookingController.c
 
 /**
  * @swagger
+ * /admin/bookings/list/normal:
+ *   get:
+ *     summary: View normal (online/app) bookings
+ *     tags: [Admin Bookings]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.get('/list/normal', adminBookingController.getNormalBookings);
+
+/**
+ * @swagger
+ * /admin/bookings/list/offline:
+ *   get:
+ *     summary: View offline (walk-in) bookings
+ *     tags: [Admin Bookings]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.get('/list/offline', adminBookingController.getOfflineBookings);
+
+/**
+ * @swagger
  * /admin/bookings/{id}/status:
  *   patch:
  *     summary: Update booking status

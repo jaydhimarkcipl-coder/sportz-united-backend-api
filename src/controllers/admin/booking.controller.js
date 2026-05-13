@@ -56,6 +56,26 @@ class AdminBookingController {
             next(error);
         }
     }
+
+    async getNormalBookings(req, res, next) {
+        try {
+            const query = { ...req.query, type: 'normal' };
+            const result = await adminBookingService.getAllBookings(req.ownedArenaIds, query);
+            res.status(200).json({ success: true, data: result });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async getOfflineBookings(req, res, next) {
+        try {
+            const query = { ...req.query, type: 'offline' };
+            const result = await adminBookingService.getAllBookings(req.ownedArenaIds, query);
+            res.status(200).json({ success: true, data: result });
+        } catch (error) {
+            next(error);
+        }
+    }
 }
 
 module.exports = new AdminBookingController();

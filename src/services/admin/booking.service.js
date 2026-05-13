@@ -16,6 +16,12 @@ class AdminBookingService {
         if (queryOptions.courtId) filters.bookingWhere.CourtId = queryOptions.courtId;
         if (queryOptions.paymentMethod) filters.transactionWhere.PaymentMethod = queryOptions.paymentMethod;
 
+        if (queryOptions.type === 'offline') {
+            filters.transactionWhere.PaymentMethod = ['Cash', 'Offline', 'ArenaWallet'];
+        } else if (queryOptions.type === 'normal') {
+            filters.transactionWhere.PaymentMethod = ['Wallet', 'Razorpay'];
+        }
+
         return await adminBookingRepo.findAllBookings(filters);
     }
 

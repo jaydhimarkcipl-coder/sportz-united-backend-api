@@ -14,6 +14,19 @@ class TournamentRepository {
         });
     }
 
+    async findTournamentByIdOrCode(identifier) {
+        const isNumeric = !isNaN(identifier) && !isNaN(parseFloat(identifier));
+        const query = isNumeric ? { TournamentId: identifier } : { TournamentCode: identifier };
+
+        return await Tournament.findOne({
+            where: query,
+            include: [
+                { model: Sport },
+                { model: Arena }
+            ]
+        });
+    }
+
     async findAllTournaments(filters = {}) {
         return await Tournament.findAll({
             where: filters,

@@ -22,9 +22,12 @@ const storage = multer.diskStorage({
     }
 });
 
-const upload = multer({ 
+const upload = multer({
     storage: storage,
-    limits: { fileSize: 10 * 1024 * 1024 } // 10MB
+    limits: {
+        fileSize: 10 * 1024 * 1024, // 10MB per file
+        fieldSize: 20 * 1024 * 1024 // 20MB for text fields (JSON/Base64)
+    }
 });
 
 /**
@@ -39,7 +42,7 @@ const upload = multer({
  *       200:
  *         description: List of upcoming tournaments
  */
-router.get('/', optionalVerifyToken, tournamentController.getTournaments);
+router.get('/', tournamentController.getTournaments);
 
 /**
  * @swagger
@@ -65,8 +68,9 @@ router.get('/my-registrations', verifyToken, tournamentController.getMyRegistrat
  *       - in: path
  *         name: id
  *         required: true
+ *         description: Tournament ID (numeric) or Tournament Code (e.g., TRN-JEZQ)
  *         schema:
- *           type: integer
+ *           type: string
  *     responses:
  *       200:
  *         description: Tournament details
@@ -87,8 +91,9 @@ router.get('/:id', tournamentController.getTournamentDetails);
  *       - in: path
  *         name: tournamentId
  *         required: true
+ *         description: Tournament ID (numeric) or Tournament Code (e.g., TRN-JEZQ)
  *         schema:
- *           type: integer
+ *           type: string
  *     requestBody:
  *       required: true
  *       content:
@@ -118,7 +123,7 @@ router.get('/:id', tournamentController.getTournamentDetails);
  *       401:
  *         description: Unauthorized
  */
-router.post('/:tournamentId/register', verifyToken, upload.any(), tournamentController.register);
+router.post('/:tournamentId/register', upload.any(), tournamentController.register);
 
 
 module.exports = router;

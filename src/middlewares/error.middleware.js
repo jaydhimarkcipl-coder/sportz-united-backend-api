@@ -1,11 +1,17 @@
-const errorHandler = (err, req, res, next) => {
-    // Log the error for debugging
-    console.error(`--- ERROR [${err.statusCode || 500}] ---`, err.message || err);
-    if (err.stack) console.error(err.stack);
+const logger = require('../utils/logger');
 
-    // Default error status code and message
+const errorHandler = (err, req, res, next) => {
     const statusCode = err.statusCode || 500;
     const message = err.message || 'Internal Server Error';
+
+    // Log the error using Winston
+    logger.error(`${req.method} ${req.originalUrl} - [${statusCode}] - ${message}`, {
+        stack: err.stack,
+        body: req.body,
+        params: req.params,
+        query: req.query,
+        user: req.user ? req.user.id : 'Guest'
+    });
 
     res.status(statusCode).json({
         success: false,

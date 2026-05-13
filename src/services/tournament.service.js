@@ -2,7 +2,8 @@ const tournamentRepo = require('../repositories/tournament.repository');
 const { formatDateTime } = require('../utils/time.util');
 const { saveBase64Image, isBase64Image } = require('../utils/file.util');
 const { sendWhatsAppMessage } = require('../utils/whatsapp.util');
-const { TournamentRegistration, TournamentParticipant, Player, sequelize } = require('../models');
+const { generateTournamentCode } = require('../utils/code.util');
+const { TournamentRegistration, TournamentParticipant, Player, Tournament, sequelize } = require('../models');
 const { Op } = require('sequelize');
 
 const formatForMSSQL = (d) => {
@@ -37,13 +38,32 @@ class TournamentService {
             createData.ArenaId = null;
         }
 
+        // Handle Base64 images if files weren't uploaded via multipart
+        if (!createData.BannerUrl && isBase64Image(createData.banner)) {
+            createData.BannerUrl = saveBase64Image(createData.banner, 'tournament-banner');
+        }
+        if (!createData.OrganizerLogoUrl && isBase64Image(createData.organizerLogo)) {
+            createData.OrganizerLogoUrl = saveBase64Image(createData.organizerLogo, 'organizer-logo');
+        }
+
+        // Generate Unique Tournament Code
+        let code;
+        let isUnique = false;
+        while (!isUnique) {
+            code = generateTournamentCode();
+            const existing = await Tournament.findOne({ where: { TournamentCode: code } });
+            if (!existing) isUnique = true;
+        }
+        createData.TournamentCode = code;
+
         const tournament = await tournamentRepo.createTournament({
             ...createData,
             StartDate: formatForMSSQL(createData.StartDate),
             EndDate: formatForMSSQL(createData.EndDate),
             RegistrationStartDate: formatForMSSQL(createData.RegistrationStartDate),
             RegistrationEndDate: formatForMSSQL(createData.RegistrationEndDate),
-            CreatedBy: userId
+            CreatedBy: userId,
+            CreatedDate: formatForMSSQL(new Date())
         });
 
         const result = tournament.toJSON();
@@ -80,8 +100,8 @@ class TournamentService {
         });
     }
 
-    async getTournamentDetails(tournamentId) {
-        const tournament = await tournamentRepo.findTournamentById(tournamentId);
+    async getTournamentDetails(identifier) {
+        const tournament = await tournamentRepo.findTournamentByIdOrCode(identifier);
         if (!tournament) {
             throw { statusCode: 404, message: 'Tournament not found' };
         }
@@ -115,13 +135,15 @@ class TournamentService {
             throw { statusCode: 400, message: `Tournament does not have enough slots. Available: ${tournament.MaxParticipants - currentParticipants}` };
         }
 
-        // Check per-player registration limit
-        const playerRegCount = await TournamentRegistration.count({
-            where: { TournamentId: tournamentId, PlayerId: registrantId, Status: { [Op.ne]: 'Cancelled' } }
-        });
+        // Check per-player registration limit (only for authenticated users)
+        if (registrantId) {
+            const playerRegCount = await TournamentRegistration.count({
+                where: { TournamentId: tournamentId, PlayerId: registrantId, Status: { [Op.ne]: 'Cancelled' } }
+            });
 
-        if (playerRegCount >= (tournament.MaxRegistrationsPerPlayer || 1)) {
-            throw { statusCode: 400, message: `You have reached the maximum registration limit for this tournament (${tournament.MaxRegistrationsPerPlayer || 1}).` };
+            if (playerRegCount >= (tournament.MaxRegistrationsPerPlayer || 1)) {
+                throw { statusCode: 400, message: `You have reached the maximum registration limit for this tournament (${tournament.MaxRegistrationsPerPlayer || 1}).` };
+            }
         }
 
         const t = await sequelize.transaction();
@@ -141,9 +163,9 @@ class TournamentService {
             const participantsData = players.map(p => {
                 let photoUrl = p.photoPath || null;
                 
-                // Fallback to Base64 if photoPath is not provided but photo (base64) is
+                // Handle Base64 photo if no file path provided
                 if (!photoUrl && isBase64Image(p.photo)) {
-                    photoUrl = saveBase64Image(p.photo, 'tournament-player');
+                    photoUrl = saveBase64Image(p.photo, 'player-photo');
                 }
 
                 return {
@@ -219,6 +241,14 @@ class TournamentService {
             if (!updateData.ArenaId || updateData.ArenaId === '0' || updateData.ArenaId === 0) {
                 updateData.ArenaId = null;
             }
+        }
+
+        // Handle Base64 images
+        if (!updateData.BannerUrl && isBase64Image(updateData.banner)) {
+            updateData.BannerUrl = saveBase64Image(updateData.banner, 'tournament-banner');
+        }
+        if (!updateData.OrganizerLogoUrl && isBase64Image(updateData.organizerLogo)) {
+            updateData.OrganizerLogoUrl = saveBase64Image(updateData.organizerLogo, 'organizer-logo');
         }
 
         if (updateData.StartDate) updateData.StartDate = formatForMSSQL(updateData.StartDate);

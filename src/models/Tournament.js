@@ -7,6 +7,11 @@ const Tournament = sequelize.define('Tournament', {
         primaryKey: true,
         autoIncrement: true
     },
+    TournamentCode: {
+        type: DataTypes.STRING(20),
+        unique: true,
+        allowNull: true // Will be generated on create
+    },
     Name: {
         type: DataTypes.STRING(150),
         allowNull: false

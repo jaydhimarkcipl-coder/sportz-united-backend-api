@@ -69,7 +69,7 @@ class TournamentController {
 
             const registration = await tournamentService.registerForTournament(
                 req.params.tournamentId,
-                req.user.id,
+                req.user?.id || null,
                 registrationData
             );
 

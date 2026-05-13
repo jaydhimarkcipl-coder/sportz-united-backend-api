@@ -13,7 +13,7 @@ const TournamentRegistration = sequelize.define('TournamentRegistration', {
     },
     PlayerId: {
         type: DataTypes.INTEGER,
-        allowNull: false
+        allowNull: true
     },
     TeamName: {
         type: DataTypes.STRING(150),

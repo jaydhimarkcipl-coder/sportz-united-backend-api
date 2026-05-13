@@ -26,7 +26,10 @@ const storage = multer.diskStorage({
 
 const upload = multer({ 
     storage: storage,
-    limits: { fileSize: 10 * 1024 * 1024 } // 10MB
+    limits: { 
+        fileSize: 10 * 1024 * 1024, // 10MB per file
+        fieldSize: 20 * 1024 * 1024 // 20MB for text fields (JSON/Base64)
+    }
 });
 
 // Protect all admin routes

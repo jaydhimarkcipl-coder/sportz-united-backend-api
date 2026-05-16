@@ -276,6 +276,7 @@ class TournamentService {
 
         const { count, rows } = await TournamentRegistration.findAndCountAll({
             where: { TournamentId: tournamentId },
+            distinct: true,
             include: [
                 {
                     model: TournamentParticipant,

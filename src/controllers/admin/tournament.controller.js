@@ -73,7 +73,8 @@ class TournamentController {
 
     async getTournamentRegistrations(req, res, next) {
         try {
-            const registrations = await tournamentService.getTournamentRegistrations(req.params.id);
+            const { page = 1, limit = 10 } = req.query;
+            const registrations = await tournamentService.getTournamentRegistrations(req.params.id, page, limit);
             res.status(200).json({
                 success: true,
                 data: registrations

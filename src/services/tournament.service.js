@@ -271,8 +271,10 @@ class TournamentService {
         return await tournamentRepo.findPlayerRegistrations(playerId);
     }
 
-    async getTournamentRegistrations(tournamentId) {
-        const registrations = await TournamentRegistration.findAll({
+    async getTournamentRegistrations(tournamentId, page = 1, limit = 10) {
+        const offset = (page - 1) * limit;
+
+        const { count, rows } = await TournamentRegistration.findAndCountAll({
             where: { TournamentId: tournamentId },
             include: [
                 {
@@ -284,11 +286,13 @@ class TournamentService {
                     attributes: ['PlayerId', 'FullName', 'Phone', 'Email']
                 }
             ],
-            order: [['RegistrationId', 'DESC']]
+            order: [['RegistrationId', 'DESC']],
+            limit: parseInt(limit),
+            offset: parseInt(offset)
         });
 
         // Transform image URLs
-        const transformedRegistrations = registrations.map(reg => {
+        const transformedRegistrations = rows.map(reg => {
             const result = reg.toJSON();
             if (result.Participants) {
                 result.Participants.forEach(p => {
@@ -299,7 +303,11 @@ class TournamentService {
         });
 
         return {
-            totalTeams: registrations.length,
+            totalRegistrations: count,
+            totalTeams: count, // Alias for backward compatibility
+            totalPages: Math.ceil(count / limit),
+            currentPage: parseInt(page),
+            limit: parseInt(limit),
             registrations: transformedRegistrations
         };
     }

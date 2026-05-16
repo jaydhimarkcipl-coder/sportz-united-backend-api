@@ -115,7 +115,7 @@ class AuthService {
     _generateAccessToken(player) {
         return jwt.sign(
             { id: player.PlayerId, type: 'Player', email: player.Email },
-            process.env.JWT_SECRET,
+            process.env.JWT_SECRET ? process.env.JWT_SECRET.trim() : '',
             { expiresIn: '1d' }
         );
     }

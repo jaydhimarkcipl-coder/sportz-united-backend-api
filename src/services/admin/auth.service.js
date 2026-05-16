@@ -35,7 +35,7 @@ class AdminAuthService {
 
         return jwt.sign(
             { id: user.UserId, type: 'Admin', role: role, email: user.Email },
-            process.env.JWT_SECRET,
+            process.env.JWT_SECRET ? process.env.JWT_SECRET.trim() : '',
             { expiresIn: '1h' } // Short lived
         );
     }

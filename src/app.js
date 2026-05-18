@@ -31,6 +31,7 @@ const publicNotificationRoutes = require('./routes/user/notification.routes');
 const adminPlayerRoutes = require('./routes/admin/player.routes');
 const tournamentRoutes = require('./routes/user/tournament.routes');
 const adminTournamentRoutes = require('./routes/admin/tournament.routes');
+const adminRegistrationRoutes = require('./routes/admin/registration.routes');
 
 // Import error handler
 const errorHandler = require('./middlewares/error.middleware');
@@ -78,6 +79,7 @@ app.use('/api/amenities', publicAmenityRoutes);
 app.use('/api/notifications', publicNotificationRoutes);
 app.use('/api/tournaments', tournamentRoutes);
 app.use('/api/admin/tournaments', adminTournamentRoutes);
+app.use('/api/admin/registrations', adminRegistrationRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

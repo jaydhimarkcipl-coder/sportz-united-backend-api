@@ -4,7 +4,13 @@ const { Op } = require('sequelize');
 class AdminWalletRepository {
     async getWalletByPlayerAndArena(playerId, arenaIds) {
         const where = { PlayerId: playerId };
-        if (arenaIds) where.ArenaId = arenaIds;
+        if (Array.isArray(arenaIds) && arenaIds.length > 0) {
+            // Arena wallets + universal wallet (WalletType Player — no Op.is null for MSSQL).
+            where[Op.or] = [
+                { ArenaId: { [Op.in]: arenaIds } },
+                { WalletType: 'Player' },
+            ];
+        }
         return await PlayerWallet.findAll({ where });
     }
 

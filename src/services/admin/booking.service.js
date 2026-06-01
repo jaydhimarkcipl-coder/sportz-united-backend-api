@@ -22,7 +22,15 @@ class AdminBookingService {
             filters.transactionWhere.PaymentMethod = ['Wallet', 'Razorpay'];
         }
 
-        return await adminBookingRepo.findAllBookings(filters);
+        const pagination = {};
+        if (queryOptions.page != null && queryOptions.page !== '') {
+            pagination.page = queryOptions.page;
+        }
+        if (queryOptions.limit != null && queryOptions.limit !== '') {
+            pagination.limit = queryOptions.limit;
+        }
+
+        return await adminBookingRepo.findAllBookings(filters, pagination);
     }
 
     async getBookingById(bookingId, ownedArenaIds) {
@@ -88,7 +96,7 @@ class AdminBookingService {
         const courtRepo = require('../../repositories/user/court.repository');
         const { Arena } = require('../../models');
 
-        const { fullName, phone, email, courtId, slotIds, bookingDate, paymentMethod } = data;
+        const { fullName, phone, email, courtId, slotIds, bookingDate, paymentMethod, playerId } = data;
 
         // 1. Ownership Validation
         const court = await courtRepo.findCourtById(courtId);
@@ -98,12 +106,23 @@ class AdminBookingService {
             throw { statusCode: 403, message: 'Access denied to this arena' };
         }
 
-        // 2. Find or Create Player
-        let player = await authRepo.findPlayerByPhone(phone);
+        // 2. Find or Create Player (same phone normalization as GET /admin/players/check)
+        let player = null;
+        const requestedId = parseInt(String(playerId ?? ''), 10);
+        if (Number.isFinite(requestedId) && requestedId > 0) {
+            player = await authRepo.findPlayerById(requestedId);
+        }
         if (!player) {
+            player = await authRepo.findPlayerByPhoneFlexible(phone);
+        }
+        if (!player) {
+            const digits = String(phone ?? '').replace(/\D/g, '');
+            const local10 = digits.length >= 10 ? digits.slice(-10) : digits;
+            const phoneStored =
+                String(phone ?? '').trim().startsWith('+') ? String(phone).trim() : `+91${local10}`;
             player = await authRepo.createPlayer({
                 FullName: fullName,
-                Phone: phone,
+                Phone: phoneStored,
                 Email: email || null,
                 IsActive: true,
                 IsVerified: false,

@@ -81,6 +81,10 @@ router.get('/occupancy', adminReportController.getOccupancy);
  *         schema: { type: integer }
  *         description: Filter by specific Arena ID (For Super Admin or owners with multiple arenas)
  *       - in: query
+ *         name: dateRange
+ *         schema: { type: string, enum: [Today, This Week, This Month] }
+ *         description: Pre-defined period shortcut (Today, This Week, This Month). Overrides startDate/endDate if provided.
+ *       - in: query
  *         name: page
  *         schema: { type: integer, default: 1 }
  *         description: Page number for pagination
@@ -123,6 +127,10 @@ router.get('/transaction-report', adminReportController.getTransactionReport);
  *         name: arenaId
  *         schema: { type: integer }
  *         description: Filter by specific Arena ID (For Super Admin or owners with multiple arenas)
+ *       - in: query
+ *         name: dateRange
+ *         schema: { type: string, enum: [Today, This Week, This Month] }
+ *         description: Pre-defined period shortcut (Today, This Week, This Month). Overrides startDate/endDate if provided.
  *       - in: query
  *         name: page
  *         schema: { type: integer, default: 1 }

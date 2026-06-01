@@ -63,6 +63,7 @@ const offlineBookingSchema = Joi.object({
     fullName: Joi.string().min(3).required(),
     phone: Joi.string().min(10).required(),
     email: Joi.string().email().optional().allow(null, ''),
+    playerId: Joi.number().integer().optional(),
     courtId: Joi.number().integer().required(),
     slotIds: Joi.array().items(Joi.number().integer()).min(1).required(),
     bookingDate: Joi.date().iso().required(),

@@ -14,7 +14,7 @@ class AdminPlayerService {
 
     async getPlayerByPhone(phone) {
         const authRepo = require('../../repositories/user/auth.repository');
-        return await authRepo.findPlayerByPhone(phone);
+        return authRepo.findPlayerByPhoneFlexible(phone);
     }
 }
 

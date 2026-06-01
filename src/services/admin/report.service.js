@@ -18,6 +18,32 @@ class AdminReportService {
         // Sticking to a simple output metric
         return { totalConfirmedBookings: totalBookings, metricType: 'Absolute Booking Count' };
     }
+
+    async getTransactionReport(reqUser, ownedArenaIds, queryOptions) {
+        const filters = {
+            startDate: queryOptions.startDate,
+            endDate: queryOptions.endDate,
+            paymentStatus: queryOptions.paymentStatus,
+            paymentMethod: queryOptions.paymentMethod,
+            arenaId: queryOptions.arenaId,
+            page: queryOptions.page,
+            limit: queryOptions.limit
+        };
+        return await adminReportRepo.getTransactionDetailsReport(reqUser.id, reqUser.role, ownedArenaIds, filters);
+    }
+
+    async getBookingReport(reqUser, ownedArenaIds, queryOptions) {
+        const filters = {
+            startDate: queryOptions.startDate,
+            endDate: queryOptions.endDate,
+            status: queryOptions.status,
+            courtId: queryOptions.courtId,
+            arenaId: queryOptions.arenaId,
+            page: queryOptions.page,
+            limit: queryOptions.limit
+        };
+        return await adminReportRepo.getBookingDetailsReport(ownedArenaIds, filters);
+    }
 }
 
 module.exports = new AdminReportService();

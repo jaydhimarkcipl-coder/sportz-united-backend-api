@@ -9,11 +9,19 @@ const arenaAmenityController = require('../../controllers/admin/arena-amenity.co
 
 // Admin and Super Admin access
 router.use(verifyToken);
-router.use(allowRoles('admin', 'super_admin'));
+router.use(allowRoles('super_admin', 'arena_owner', 'admin'));
 
 const arenaIdParamSchema = Joi.object({
     arenaId: Joi.number().required()
 });
+
+const idParamSchema = Joi.object({
+    id: Joi.number().required()
+});
+
+router.get('/', arenaAmenityController.getArenas);
+
+router.get('/:id', validate(idParamSchema, 'params'), arenaAmenityController.getArenaById);
 
 const arenaAmenityParamSchema = Joi.object({
     arenaId: Joi.number().required(),

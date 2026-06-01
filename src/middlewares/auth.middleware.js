@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const logger = require('../utils/logger');
 
 const verifyToken = (req, res, next) => {
     const authHeader = req.headers.authorization;
@@ -6,12 +7,21 @@ const verifyToken = (req, res, next) => {
         return res.status(401).json({ message: 'Unauthorized: No token provided' });
     }
 
-    const token = authHeader.split(' ')[1];
+    let token = authHeader.split(' ')[1];
+    if (token === 'Bearer' && authHeader.split(' ').length > 2) {
+        token = authHeader.split(' ').slice(2).join(' ');
+    }
+    if (token) {
+        token = token.replace(/^["']|["']$/g, '').trim();
+        if (token.toLowerCase().startsWith('bearer ')) {
+            token = token.substring(7).trim();
+        }
+    }
 
     const secret = process.env.JWT_SECRET ? process.env.JWT_SECRET.trim() : null;
 
     if (!secret) {
-        console.error('ERROR: JWT_SECRET is not defined in environment variables!');
+        logger.error('ERROR: JWT_SECRET is not defined in environment variables!');
         return res.status(500).json({ message: 'Internal server error: Auth configuration missing' });
     }
 
@@ -20,10 +30,10 @@ const verifyToken = (req, res, next) => {
         req.user = decoded; // Exposes { id, type } to request
         next();
     } catch (error) {
-        console.error('--- JWT VERIFICATION FAILURE ---');
-        console.error('Error:', error.message);
-        console.error('Token:', token.substring(0, 15) + '...');
-        console.error('Using Secret:', secret.substring(0, 3) + '***' + secret.substring(secret.length - 3));
+        logger.error('--- JWT VERIFICATION FAILURE ---');
+        logger.error(`Error: ${error.message}`);
+        logger.error(`Token: ${token ? token.substring(0, 15) : 'none'}...`);
+        logger.error(`Using Secret: ${secret ? (secret.substring(0, 3) + '***' + secret.substring(secret.length - 3)) : 'none'}`);
         return res.status(401).json({ message: 'Unauthorized: Invalid or expired token' });
     }
 };
@@ -34,7 +44,16 @@ const optionalVerifyToken = (req, res, next) => {
         return next();
     }
 
-    const token = authHeader.split(' ')[1];
+    let token = authHeader.split(' ')[1];
+    if (token === 'Bearer' && authHeader.split(' ').length > 2) {
+        token = authHeader.split(' ').slice(2).join(' ');
+    }
+    if (token) {
+        token = token.replace(/^["']|["']$/g, '').trim();
+        if (token.toLowerCase().startsWith('bearer ')) {
+            token = token.substring(7).trim();
+        }
+    }
 
     const secret = process.env.JWT_SECRET ? process.env.JWT_SECRET.trim() : null;
     if (!secret) return next();

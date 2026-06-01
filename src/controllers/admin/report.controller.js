@@ -27,6 +27,24 @@ class AdminReportController {
             next(error);
         }
     }
+
+    async getTransactionReport(req, res, next) {
+        try {
+            const data = await adminReportService.getTransactionReport(req.user, req.ownedArenaIds, req.query);
+            res.status(200).json({ success: true, data });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async getBookingReport(req, res, next) {
+        try {
+            const data = await adminReportService.getBookingReport(req.user, req.ownedArenaIds, req.query);
+            res.status(200).json({ success: true, data });
+        } catch (error) {
+            next(error);
+        }
+    }
 }
 
 module.exports = new AdminReportController();

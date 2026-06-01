@@ -31,6 +31,25 @@ class ArenaAmenityController {
             next(error);
         }
     }
+
+    async getArenas(req, res, next) {
+        try {
+            const arenas = await arenaAmenityService.getArenas(req.user, req.ownedArenaIds);
+            res.json({ success: true, data: arenas });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async getArenaById(req, res, next) {
+        try {
+            const { id } = req.params;
+            const arena = await arenaAmenityService.getArenaById(req.user, id, req.ownedArenaIds);
+            res.json({ success: true, data: arena });
+        } catch (error) {
+            next(error);
+        }
+    }
 }
 
 module.exports = new ArenaAmenityController();

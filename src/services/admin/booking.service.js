@@ -1,5 +1,67 @@
 const adminBookingRepo = require('../../repositories/admin/booking.repository');
 const { sequelize } = require('../../config/database');
+const { Op } = require('sequelize');
+
+const formatDate = (date) => {
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+};
+
+const getPeriodDates = (period) => {
+    if (!period) return null;
+    const today = new Date();
+    let start;
+    let end;
+    const normalized = String(period).trim().toLowerCase();
+
+    if (normalized === 'today') {
+        start = new Date(today);
+        end = new Date(today);
+    } else if (normalized === 'this week' || normalized === 'week') {
+        const day = today.getDay();
+        const diffToMonday = today.getDate() - day + (day === 0 ? -6 : 1);
+        start = new Date(today.getFullYear(), today.getMonth(), diffToMonday);
+        end = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 6);
+    } else if (normalized === 'this month' || normalized === 'month') {
+        start = new Date(today.getFullYear(), today.getMonth(), 1);
+        end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    }
+
+    if (start && end) {
+        return {
+            startDate: formatDate(start),
+            endDate: formatDate(end),
+        };
+    }
+    return null;
+};
+
+function applyBookingDateFilter(bookingWhere, queryOptions) {
+    let { startDate, endDate, date, dateRange, period, timeRange } = queryOptions;
+    const range = dateRange || period || timeRange;
+    if (range) {
+        const periodDates = getPeriodDates(range);
+        if (periodDates) {
+            startDate = periodDates.startDate;
+            endDate = periodDates.endDate;
+        }
+    }
+
+    if (date && !startDate && !endDate) {
+        bookingWhere.BookingDate = date;
+        return;
+    }
+
+    if (startDate && endDate) {
+        bookingWhere.BookingDate = { [Op.between]: [startDate, endDate] };
+    } else if (startDate) {
+        bookingWhere.BookingDate = { [Op.gte]: startDate };
+    } else if (endDate) {
+        bookingWhere.BookingDate = { [Op.lte]: endDate };
+    }
+}
 
 class AdminBookingService {
     async getAllBookings(ownedArenaIds, queryOptions) {
@@ -10,8 +72,8 @@ class AdminBookingService {
             filters.courtWhere.ArenaId = ownedArenaIds;
         }
 
-        // Apply Custom Query Filters (date, status, paymentMethod, etc)
-        if (queryOptions.date) filters.bookingWhere.BookingDate = queryOptions.date;
+        // Apply Custom Query Filters (date range, status, paymentMethod, etc)
+        applyBookingDateFilter(filters.bookingWhere, queryOptions);
         if (queryOptions.status) filters.bookingWhere.Status = queryOptions.status;
         if (queryOptions.courtId) filters.bookingWhere.CourtId = queryOptions.courtId;
         if (queryOptions.paymentMethod) filters.transactionWhere.PaymentMethod = queryOptions.paymentMethod;

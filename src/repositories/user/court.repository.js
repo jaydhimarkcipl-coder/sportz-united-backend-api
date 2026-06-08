@@ -1,4 +1,4 @@
-const { Court, CourtSlot, Sport } = require('../../models');
+const { Court, CourtSlot, Sport, Booking, BookingDetail } = require('../../models');
 const { Op } = require('sequelize');
 
 class CourtRepository {
@@ -27,13 +27,41 @@ class CourtRepository {
         const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
         const dayName = dayNames[dateObj.getDay()];
 
-        return await CourtSlot.findAll({
+        const slots = await CourtSlot.findAll({
             where: { 
                 CourtId: courtId,
                 DayName: {
                     [Op.like]: `%${dayName}%` // the schema DayName could be e.g. 'Monday', 'Mon-Fri'
                 }
             }
+        });
+
+        const bookings = await Booking.findAll({
+            where: {
+                CourtId: courtId,
+                BookingDate: date,
+                Status: {
+                    [Op.ne]: 'Cancelled'
+                }
+            },
+            include: [{
+                model: BookingDetail
+            }]
+        });
+
+        const bookedSlotIds = new Set();
+        bookings.forEach(booking => {
+            booking.BookingDetails.forEach(detail => {
+                bookedSlotIds.add(detail.SlotId);
+            });
+        });
+
+        return slots.map(slot => {
+            const slotData = slot.toJSON();
+            const booked = bookedSlotIds.has(slot.SlotId);
+            slotData.isBooked = booked;
+            slotData.IsBooked = booked;
+            return slotData;
         });
     }
     

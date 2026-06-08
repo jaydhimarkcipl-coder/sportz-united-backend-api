@@ -97,6 +97,22 @@ class PaymentRepository {
         );
         if (nullArenaWallet && hasFunds(nullArenaWallet)) return nullArenaWallet;
 
+        const anyFunded = wallets.find((w) => hasFunds(w));
+        if (anyFunded) return anyFunded;
+
+        for (const w of wallets) {
+            const type = String(w.WalletType || '').toLowerCase();
+            if (type.includes('arena') && hasFunds(w)) {
+                if (
+                    preferredArenaId == null ||
+                    preferredArenaId === '' ||
+                    Number(w.ArenaId) === Number(preferredArenaId)
+                ) {
+                    return w;
+                }
+            }
+        }
+
         if (preferredArenaId != null && preferredArenaId !== '') {
             const arenaWallet = wallets.find(
                 (w) => Number(w.ArenaId) === Number(preferredArenaId),
@@ -104,7 +120,7 @@ class PaymentRepository {
             if (arenaWallet) return arenaWallet;
         }
 
-        return wallets.find((w) => (parseFloat(w.Balance) || 0) > 0) || wallets[0];
+        return wallets[0] ?? null;
     }
 
     async deductFromWallet(playerId, amount, transaction, arenaId = null) {

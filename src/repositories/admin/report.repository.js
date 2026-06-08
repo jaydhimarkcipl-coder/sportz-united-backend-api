@@ -205,21 +205,59 @@ class AdminReportRepository {
         const limitNum = parseInt(limit) || 10;
         const offsetNum = (pageNum - 1) * limitNum;
 
+        const courtInclude = {
+            model: Court,
+            as: 'Court',
+            where: courtWhere,
+            required: true,
+            attributes: ['CourtId', 'CourtName', 'ArenaId']
+        };
+
+        const courtFilter = { ...courtWhere };
+        if (courtId) {
+            courtFilter.CourtId = parseInt(courtId);
+        }
+        const courtRows = await Court.findAll({
+            where: courtFilter,
+            attributes: ['CourtId'],
+            raw: true
+        });
+        const allowedCourtIds = courtRows.map((row) => row.CourtId);
+
+        const amountWhere = { ...bookingWhere };
+        let grossAmount = 0;
+        let netAmount = 0;
+
+        if (allowedCourtIds.length > 0) {
+            const courtAllowed =
+                !courtId || allowedCourtIds.includes(parseInt(courtId));
+            if (courtAllowed) {
+                if (!courtId) {
+                    amountWhere.CourtId =
+                        allowedCourtIds.length === 1
+                            ? allowedCourtIds[0]
+                            : { [Op.in]: allowedCourtIds };
+                }
+                const [grossRaw, netRaw] = await Promise.all([
+                    Booking.sum('TotalAmount', { where: amountWhere }),
+                    Booking.sum('NetAmount', { where: amountWhere })
+                ]);
+                grossAmount = grossRaw != null ? Number(grossRaw) : 0;
+                netAmount = netRaw != null ? Number(netRaw) : 0;
+            }
+        }
+
         const { count, rows } = await Booking.findAndCountAll({
             where: bookingWhere,
             include: [
                 {
-                    model: Court,
-                    as: 'Court',
-                    where: courtWhere,
-                    required: true,
+                    ...courtInclude,
                     include: [{
                         model: Arena,
                         as: 'Arena',
                         required: false,
                         attributes: ['ArenaId', 'Name']
-                    }],
-                    attributes: ['CourtId', 'CourtName', 'ArenaId']
+                    }]
                 },
                 {
                     model: Player,
@@ -241,6 +279,8 @@ class AdminReportRepository {
 
         return {
             totalBookings: count,
+            grossAmount: Number.isFinite(grossAmount) ? grossAmount : 0,
+            netAmount: Number.isFinite(netAmount) ? netAmount : 0,
             totalPages: Math.ceil(count / limitNum),
             currentPage: pageNum,
             limit: limitNum,

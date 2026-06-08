@@ -79,7 +79,7 @@ class AdminBookingService {
         if (queryOptions.paymentMethod) filters.transactionWhere.PaymentMethod = queryOptions.paymentMethod;
 
         if (queryOptions.type === 'offline') {
-            filters.transactionWhere.PaymentMethod = ['Cash', 'Offline', 'ArenaWallet'];
+            filters.transactionWhere.PaymentMethod = ['Cash', 'Offline', 'ArenaWallet', 'Wallet'];
         } else if (queryOptions.type === 'normal') {
             filters.transactionWhere.PaymentMethod = ['Wallet', 'Razorpay'];
         }

@@ -59,7 +59,8 @@ class AdminBookingController {
 
     async getNormalBookings(req, res, next) {
         try {
-            const query = { ...req.query, type: 'normal' };
+            // Remove 'type: normal' filter so it returns all bookings just like the booking report
+            const query = { ...req.query };
             const result = await adminBookingService.getAllBookings(req.ownedArenaIds, query);
             res.status(200).json({ success: true, data: result });
         } catch (error) {

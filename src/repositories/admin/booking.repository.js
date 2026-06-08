@@ -14,7 +14,7 @@ class AdminBookingRepository {
     }
 
     buildBookingListQuery(filters = {}) {
-        const { Transaction } = require('../../models');
+        const { Transaction, Arena } = require('../../models');
         const courtWhere = filters.courtWhere || {};
         const transactionWhere = this.normalizeTransactionWhere(
             filters.transactionWhere || {},
@@ -29,6 +29,14 @@ class AdminBookingRepository {
                     as: 'Court',
                     where: courtWhere,
                     required: Object.keys(courtWhere).length > 0,
+                    include: [
+                        {
+                            model: Arena,
+                            as: 'Arena',
+                            required: false,
+                            attributes: ['ArenaId', 'Name']
+                        }
+                    ]
                 },
                 {
                     model: Player,
@@ -60,7 +68,27 @@ class AdminBookingRepository {
             limitNum > 0;
 
         if (!usePagination) {
-            return Booking.findAll(query);
+            const rows = await Booking.findAll(query);
+            const mappedRows = rows.map(r => {
+                const row = r.toJSON();
+                // Transaction is a hasMany relation, so it comes as an array "Transactions"
+                const transactions = row.Transactions || [];
+                const txMethod = transactions.length > 0 ? transactions[0].PaymentMethod : '';
+                const txStatus = transactions.length > 0 ? transactions[0].PaymentStatus : '';
+                const isOffline = ['Cash', 'Offline', 'Offline/Admin', 'ArenaWallet'].includes(txMethod);
+                row.IsOffline = isOffline;
+                row.BookingSource = isOffline ? 'Turf / Offline' : 'Online / App';
+                row.PaymentMethod = txMethod;
+                row.PaymentStatus = txStatus;
+                return row;
+            });
+            return {
+                bookings: mappedRows,
+                totalBookings: mappedRows.length,
+                totalPages: 1,
+                currentPage: 1,
+                limit: mappedRows.length || 10,
+            };
         }
 
         const offsetNum = (pageNum - 1) * limitNum;
@@ -71,8 +99,22 @@ class AdminBookingRepository {
             distinct: true,
         });
 
+        const mappedRows = rows.map(r => {
+            const row = r.toJSON();
+            // Transaction is a hasMany relation, so it comes as an array "Transactions"
+            const transactions = row.Transactions || [];
+            const txMethod = transactions.length > 0 ? transactions[0].PaymentMethod : '';
+            const txStatus = transactions.length > 0 ? transactions[0].PaymentStatus : '';
+            const isOffline = ['Cash', 'Offline', 'Offline/Admin', 'ArenaWallet'].includes(txMethod);
+            row.IsOffline = isOffline;
+            row.BookingSource = isOffline ? 'Turf / Offline' : 'Online / App';
+            row.PaymentMethod = txMethod;
+            row.PaymentStatus = txStatus;
+            return row;
+        });
+
         return {
-            bookings: rows,
+            bookings: mappedRows,
             totalBookings: count,
             totalPages: Math.ceil(count / limitNum) || 1,
             currentPage: pageNum,
@@ -81,8 +123,9 @@ class AdminBookingRepository {
     }
 
     async findBookingById(bookingId, filters = {}) {
+        const { Transaction } = require('../../models');
         const courtWhere = filters.courtWhere || {};
-        return await Booking.findOne({
+        const booking = await Booking.findOne({
             where: { BookingId: bookingId },
             include: [
                 {
@@ -99,9 +142,27 @@ class AdminBookingRepository {
                     model: BookingDetail,
                     as: 'BookingDetails',
                     include: [{ model: CourtSlot, as: 'CourtSlot' }]
+                },
+                {
+                    model: Transaction,
+                    required: false
                 }
             ]
         });
+
+        if (!booking) return null;
+
+        const row = booking.toJSON();
+        const transactions = row.Transactions || [];
+        const txMethod = transactions.length > 0 ? transactions[0].PaymentMethod : '';
+        const txStatus = transactions.length > 0 ? transactions[0].PaymentStatus : '';
+        const isOffline = ['Cash', 'Offline', 'Offline/Admin', 'ArenaWallet'].includes(txMethod);
+        row.IsOffline = isOffline;
+        row.BookingSource = isOffline ? 'Turf / Offline' : 'Online / App';
+        row.PaymentMethod = txMethod;
+        row.PaymentStatus = txStatus;
+
+        return row;
     }
 
     async updateBooking(bookingId, updateData) {

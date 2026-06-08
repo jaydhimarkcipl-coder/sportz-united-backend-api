@@ -5,12 +5,20 @@ const { sequelize } = require('../../models');
 
 class PaymentService {
     async processPayment(paymentData, transaction) {
-        // If payment method is wallet, deduct from relevant wallet
-        if (paymentData.PaymentMethod === 'Wallet') {
-            await paymentRepo.deductFromWallet(paymentData.PlayerId, paymentData.Amount, transaction);
-        } else if (paymentData.PaymentMethod === 'ArenaWallet') {
-            if (!paymentData.ArenaId) throw new Error("ArenaId is required for ArenaWallet payment");
-            await paymentRepo.deductFromWallet(paymentData.PlayerId, paymentData.Amount, transaction, paymentData.ArenaId);
+        const method = paymentData.PaymentMethod;
+        if (method === 'Wallet' || method === 'ArenaWallet') {
+            if (method === 'ArenaWallet' && !paymentData.ArenaId) {
+                const err = new Error('ArenaId is required for ArenaWallet payment');
+                err.statusCode = 400;
+                throw err;
+            }
+            // Pass court ArenaId for both methods so venue + universal wallets resolve correctly.
+            await paymentRepo.deductFromWallet(
+                paymentData.PlayerId,
+                paymentData.Amount,
+                transaction,
+                paymentData.ArenaId ?? null,
+            );
         }
 
         const record = {

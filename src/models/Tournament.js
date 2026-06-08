@@ -87,6 +87,10 @@ const Tournament = sequelize.define('Tournament', {
         type: DataTypes.STRING(50),
         defaultValue: 'Upcoming' // Upcoming, Ongoing, Completed, Cancelled
     },
+    RegistrationFormat: {
+        type: DataTypes.TEXT,
+        allowNull: true
+    },
     CreatedBy: {
         type: DataTypes.INTEGER
     },

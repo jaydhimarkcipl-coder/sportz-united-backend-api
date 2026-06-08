@@ -90,6 +90,18 @@ async function syncDB() {
             console.log('tblTournament table already exists.');
         }
 
+        const checkRegistrationFormatCol = `
+            SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+            WHERE TABLE_NAME = 'tblTournament' AND COLUMN_NAME = 'RegistrationFormat'
+        `;
+        const [registrationFormatCol] = await sequelize.query(checkRegistrationFormatCol);
+        if (registrationFormatCol.length === 0) {
+            await sequelize.query(
+                `ALTER TABLE [tblTournament] ADD [RegistrationFormat] NVARCHAR(MAX) NULL`,
+            );
+            console.log('RegistrationFormat column added to tblTournament.');
+        }
+
         // 4. Ensure tblTournamentRegistration exists
         const checkReg = `SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'tblTournamentRegistration'`;
         const [regExists] = await sequelize.query(checkReg);

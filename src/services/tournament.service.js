@@ -37,6 +37,9 @@ class TournamentService {
         if (!createData.ArenaId || createData.ArenaId === '0' || createData.ArenaId === 0) {
             createData.ArenaId = null;
         }
+        if (createData.RegistrationFormat != null && typeof createData.RegistrationFormat === 'object') {
+            createData.RegistrationFormat = JSON.stringify(createData.RegistrationFormat);
+        }
 
         // Handle Base64 images if files weren't uploaded via multipart
         if (!createData.BannerUrl && isBase64Image(createData.banner)) {
@@ -237,6 +240,9 @@ class TournamentService {
         }
 
         const updateData = { ...tournamentData };
+        if (updateData.RegistrationFormat != null && typeof updateData.RegistrationFormat === 'object') {
+            updateData.RegistrationFormat = JSON.stringify(updateData.RegistrationFormat);
+        }
         if (updateData.hasOwnProperty('ArenaId')) {
             if (!updateData.ArenaId || updateData.ArenaId === '0' || updateData.ArenaId === 0) {
                 updateData.ArenaId = null;

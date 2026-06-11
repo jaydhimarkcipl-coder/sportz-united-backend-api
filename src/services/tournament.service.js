@@ -22,6 +22,26 @@ const getFullUrl = (path) => {
     return `${baseUrl}/${cleanPath}`;
 };
 
+const fixRegistrationFormat = (tournament) => {
+    if (!tournament.RegistrationFormat) return tournament;
+    try {
+        let parsed = JSON.parse(tournament.RegistrationFormat);
+        if (Array.isArray(parsed)) {
+            let temp = {};
+            parsed.forEach(item => {
+                const label = String(item.label || '').toLowerCase();
+                const value = item.value;
+                if (label.includes('players per team')) temp.playersPerTeam = value;
+                else if (label.includes('minimum age')) temp.minAge = value;
+                else if (label.includes('maximum age')) temp.maxAge = value;
+                else if (label.includes('game type')) temp.gameType = value;
+            });
+            tournament.RegistrationFormat = JSON.stringify(temp);
+        }
+    } catch(e) {}
+    return tournament;
+};
+
 class TournamentService {
     async createTournament(tournamentData, userId) {
         // Basic validation
@@ -72,7 +92,7 @@ class TournamentService {
         const result = tournament.toJSON();
         result.BannerUrl = getFullUrl(result.BannerUrl);
         result.OrganizerLogoUrl = getFullUrl(result.OrganizerLogoUrl);
-        return result;
+        return fixRegistrationFormat(result);
     }
 
     async getTournaments(filters = {}, userId = null) {
@@ -91,7 +111,7 @@ class TournamentService {
                 tournament.IsRegistered = registeredTournamentIds.has(tournament.TournamentId);
                 tournament.BannerUrl = getFullUrl(tournament.BannerUrl);
                 tournament.OrganizerLogoUrl = getFullUrl(tournament.OrganizerLogoUrl);
-                return tournament;
+                return fixRegistrationFormat(tournament);
             });
         }
         
@@ -99,7 +119,7 @@ class TournamentService {
             const tournament = t.toJSON();
             tournament.BannerUrl = getFullUrl(tournament.BannerUrl);
             tournament.OrganizerLogoUrl = getFullUrl(tournament.OrganizerLogoUrl);
-            return tournament;
+            return fixRegistrationFormat(tournament);
         });
     }
 
@@ -111,7 +131,7 @@ class TournamentService {
         const result = tournament.toJSON();
         result.BannerUrl = getFullUrl(result.BannerUrl);
         result.OrganizerLogoUrl = getFullUrl(result.OrganizerLogoUrl);
-        return result;
+        return fixRegistrationFormat(result);
     }
 
     async registerForTournament(tournamentId, registrantId, registrationData) {
@@ -270,7 +290,7 @@ class TournamentService {
         const result = updated.toJSON();
         result.BannerUrl = getFullUrl(result.BannerUrl);
         result.OrganizerLogoUrl = getFullUrl(result.OrganizerLogoUrl);
-        return result;
+        return fixRegistrationFormat(result);
     }
 
     async getPlayerRegistrations(playerId) {

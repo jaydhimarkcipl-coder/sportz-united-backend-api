@@ -3,6 +3,7 @@ const tournamentService = require('../../services/tournament.service');
 class TournamentController {
     async createTournament(req, res, next) {
         try {
+            console.log('--- CREATE TOURNAMENT PAYLOAD ---', JSON.stringify(req.body, null, 2));
             const tournamentData = { ...req.body };
             
             if (req.files && req.files.length > 0) {
@@ -25,6 +26,19 @@ class TournamentController {
                 parsedRegFormat = parsedBody.RegistrationFormat || parsedBody.registrationFormat || {};
             }
 
+            if (Array.isArray(parsedRegFormat)) {
+                let temp = {};
+                parsedRegFormat.forEach(item => {
+                    const label = String(item.label || '').toLowerCase();
+                    const value = item.value;
+                    if (label.includes('players per team')) temp.playersPerTeam = value;
+                    else if (label.includes('minimum age')) temp.minAge = value;
+                    else if (label.includes('maximum age')) temp.maxAge = value;
+                    else if (label.includes('game type')) temp.gameType = value;
+                });
+                parsedRegFormat = temp;
+            }
+
             const playersPerTeam = req.body.playersPerTeam || req.body.PlayersPerTeam || req.body['Players per team *'] || req.body['Players per team'];
             const minAge = req.body.minAge || req.body.MinAge || req.body.minimumAge || req.body.MinimumAge || req.body['Minimum age (optional)'] || req.body['Minimum age'];
             const maxAge = req.body.maxAge || req.body.MaxAge || req.body.maximumAge || req.body.MaximumAge || req.body['Maximum age (optional)'] || req.body['Maximum age'];
@@ -37,6 +51,8 @@ class TournamentController {
 
             if (Object.keys(parsedRegFormat).length > 0) {
                 tournamentData.RegistrationFormat = JSON.stringify(parsedRegFormat);
+            } else if (typeof regFormat === 'string' && regFormat.trim()) {
+                tournamentData.RegistrationFormat = regFormat.trim();
             }
 
             // Handle base64 case-insensitive banner
@@ -82,10 +98,9 @@ class TournamentController {
     async updateTournament(req, res, next) {
         try {
             const tournamentData = { ...req.body };
-            
-            const fs = require('fs');
-            const path = require('path');
-            fs.appendFileSync(path.join(__dirname, '../../../../logs/update-payload.log'), JSON.stringify({ body: req.body, files: req.files ? req.files.map(f => f.fieldname) : [] }, null, 2) + '\n');
+
+
+
 
             if (req.files && req.files.length > 0) {
                 const logoFile = req.files.find(f => f.fieldname.toLowerCase().includes('logo'));
@@ -110,6 +125,19 @@ class TournamentController {
                 parsedRegFormat = parsedBody.RegistrationFormat || parsedBody.registrationFormat || {};
             }
 
+            if (Array.isArray(parsedRegFormat)) {
+                let temp = {};
+                parsedRegFormat.forEach(item => {
+                    const label = String(item.label || '').toLowerCase();
+                    const value = item.value;
+                    if (label.includes('players per team')) temp.playersPerTeam = value;
+                    else if (label.includes('minimum age')) temp.minAge = value;
+                    else if (label.includes('maximum age')) temp.maxAge = value;
+                    else if (label.includes('game type')) temp.gameType = value;
+                });
+                parsedRegFormat = temp;
+            }
+
             const playersPerTeam = req.body.playersPerTeam || req.body.PlayersPerTeam || req.body['Players per team *'] || req.body['Players per team'];
             const minAge = req.body.minAge || req.body.MinAge || req.body.minimumAge || req.body.MinimumAge || req.body['Minimum age (optional)'] || req.body['Minimum age'];
             const maxAge = req.body.maxAge || req.body.MaxAge || req.body.maximumAge || req.body.MaximumAge || req.body['Maximum age (optional)'] || req.body['Maximum age'];
@@ -122,6 +150,8 @@ class TournamentController {
 
             if (Object.keys(parsedRegFormat).length > 0) {
                 tournamentData.RegistrationFormat = JSON.stringify(parsedRegFormat);
+            } else if (typeof regFormat === 'string' && regFormat.trim()) {
+                tournamentData.RegistrationFormat = regFormat.trim();
             }
 
             // Handle base64 case-insensitive banner

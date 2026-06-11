@@ -91,6 +91,38 @@ const Tournament = sequelize.define('Tournament', {
         type: DataTypes.TEXT,
         allowNull: true
     },
+    MinAge: {
+        type: DataTypes.INTEGER,
+        allowNull: true
+    },
+    MaxAge: {
+        type: DataTypes.INTEGER,
+        allowNull: true
+    },
+    PlayersPerTeam: {
+        type: DataTypes.INTEGER,
+        allowNull: true
+    },
+    GameType: {
+        type: DataTypes.STRING(50),
+        allowNull: true
+    },
+    MinAge: {
+        type: DataTypes.INTEGER,
+        allowNull: true
+    },
+    MaxAge: {
+        type: DataTypes.INTEGER,
+        allowNull: true
+    },
+    PlayersPerTeam: {
+        type: DataTypes.INTEGER,
+        allowNull: true
+    },
+    GameType: {
+        type: DataTypes.STRING(50),
+        allowNull: true
+    },
     CreatedBy: {
         type: DataTypes.INTEGER
     },

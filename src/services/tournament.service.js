@@ -347,7 +347,12 @@ class TournamentService {
 
         const regData = registration.toJSON();
         const tournament = regData.Tournament || {};
-        const sport = tournament.Sport || {};
+               const sport = tournament.Sport || {};
+        const sportDetails = { ...sport };
+        if (sportDetails.NoOfPerson) {
+            sportDetails.NoOfPerson = Math.floor(sportDetails.NoOfPerson / 2);
+            sportDetails.PlayersPerTeam = sportDetails.NoOfPerson;
+        }
         const arena = tournament.Arena || {};
         const participants = regData.Participants || [];
 
@@ -381,7 +386,13 @@ class TournamentService {
                 EntryFee: tournament.EntryFee,
                 MaxParticipants: tournament.MaxParticipants,
                 Rules: "Check tournament description for rules and regulations.", // Placeholder as not in DB
-                Prizes: "Check tournament description for prize information."   // Placeholder as not in DB
+                Prizes: "Check tournament description for prize information.",   // Placeholder as not in DB
+                Venue: tournament.Venue || null,
+                PlayersPerTeam: tournament.PlayersPerTeam || null,
+                GameType: tournament.GameType || null,
+                MinAge: tournament.MinAge || null,
+                MaxAge: tournament.MaxAge || null,
+                RegistrationFormat: tournament.RegistrationFormat || null
             },
             team: {
                 TeamId: regData.RegistrationId,
@@ -391,8 +402,8 @@ class TournamentService {
             matches: [], // Model currently not in database
             standings: [], // Model currently not in database
             venue: {
-                Name: arena.Name || tournament.Venue || 'TBA',
-                Address: arena.Address || null,
+                Name: tournament.Venue || arena.Name || 'TBA',
+                Address: arena.AddressLine1 ? (arena.AddressLine2 ? `${arena.AddressLine1}, ${arena.AddressLine2}` : arena.AddressLine1) : null,
                 City: arena.City || null,
                 State: arena.State || null
             },
@@ -409,7 +420,7 @@ class TournamentService {
                 Amount: tournament.EntryFee
             },
             additionalDetails: {
-                SportDetails: sport,
+                SportDetails: sportDetails,
                 ArenaDetails: arena
             }
         };

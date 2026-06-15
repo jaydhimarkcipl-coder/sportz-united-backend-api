@@ -28,6 +28,17 @@ class ArenaService {
     async getSportsByArenaId(arenaId) {
         return await arenaRepo.findSportsByArenaId(arenaId);
     }
+
+    async getArenaReviews(arenaId) {
+        return await arenaRepo.findReviewsByArenaId(arenaId);
+    }
+
+    async addArenaReview(arenaId, playerId, rating, reviewText) {
+        if (!rating || rating < 1 || rating > 5) {
+            throw { statusCode: 400, message: 'Rating must be between 1 and 5' };
+        }
+        return await arenaRepo.addReview(arenaId, playerId, rating, reviewText);
+    }
 }
 
 module.exports = new ArenaService();

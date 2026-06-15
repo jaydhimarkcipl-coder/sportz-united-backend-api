@@ -1,5 +1,5 @@
 const express = require('express');
-const { getArenas, getArenaDetails, getArenaCourts, searchArenas, getArenaSlots, getArenaSports } = require('../../controllers/user/arena.controller');
+const { getArenas, getArenaDetails, getArenaCourts, searchArenas, getArenaSlots, getArenaSports, getArenaReviews, addArenaReview } = require('../../controllers/user/arena.controller');
 const { verifyToken } = require('../../middlewares/auth.middleware');
 const router = express.Router();
 
@@ -131,7 +131,42 @@ router.get('/:arenaId/sports', getArenaSports);
  *       200:
  *         description: List of reviews
  */
-router.get('/:arenaId/reviews', (req, res) => res.json({ success: true, data: [] }));
+router.get('/:arenaId/reviews', getArenaReviews);
+
+/**
+ * @swagger
+ * /arenas/{arenaId}/reviews:
+ *   post:
+ *     summary: Add a review for an arena
+ *     tags: [Arenas]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: arenaId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - rating
+ *             properties:
+ *               rating:
+ *                 type: number
+ *                 minimum: 1
+ *                 maximum: 5
+ *               reviewText:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Review added
+ */
+router.post('/:arenaId/reviews', verifyToken, addArenaReview);
 
 /**
  * @swagger

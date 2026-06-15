@@ -370,6 +370,52 @@ class ArenaRepository {
             };
         });
     }
+
+    async findReviewsByArenaId(arenaId) {
+        const { ArenaReview, Player } = require('../../models');
+        return await ArenaReview.findAll({
+            where: { ArenaId: arenaId },
+            include: [{
+                model: Player,
+                attributes: ['FullName', 'ProfilePhotoUrl']
+            }],
+            order: [['CreatedDate', 'DESC']]
+        });
+    }
+
+    async addReview(arenaId, playerId, rating, reviewText) {
+        const { ArenaReview, Arena } = require('../../models');
+        const { sequelize } = require('../../config/database');
+        
+        const t = await sequelize.transaction();
+        try {
+            const review = await ArenaReview.create({
+                ArenaId: arenaId,
+                PlayerId: playerId,
+                Rating: rating,
+                ReviewText: reviewText
+            }, { transaction: t });
+
+            // Update Average Rating and Review Count
+            const arena = await Arena.findByPk(arenaId, { transaction: t });
+            if (arena) {
+                const newReviewCount = (arena.ReviewCount || 0) + 1;
+                const newTotalRating = (parseFloat(arena.AverageRating || 0) * (arena.ReviewCount || 0)) + parseFloat(rating);
+                const newAverageRating = newTotalRating / newReviewCount;
+                
+                await arena.update({
+                    ReviewCount: newReviewCount,
+                    AverageRating: newAverageRating
+                }, { transaction: t });
+            }
+
+            await t.commit();
+            return review;
+        } catch (error) {
+            await t.rollback();
+            throw error;
+        }
+    }
 }
 
 module.exports = new ArenaRepository();

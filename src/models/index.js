@@ -22,6 +22,7 @@ const Tournament = require('./Tournament');
 const TournamentRegistration = require('./TournamentRegistration');
 const TournamentParticipant = require('./TournamentParticipant');
 const WhatsAppLog = require('./WhatsAppLog');
+const ArenaReview = require('./ArenaReview');
 
 // --- Associations ---
 
@@ -149,6 +150,14 @@ TournamentParticipant.belongsTo(TournamentRegistration, { foreignKey: 'Registrat
 Player.hasMany(TournamentParticipant, { foreignKey: 'PlayerId' });
 TournamentParticipant.belongsTo(Player, { foreignKey: 'PlayerId', as: 'Player' });
 
+// Arena & ArenaReview
+Arena.hasMany(ArenaReview, { foreignKey: 'ArenaId' });
+ArenaReview.belongsTo(Arena, { foreignKey: 'ArenaId' });
+
+// Player & ArenaReview
+Player.hasMany(ArenaReview, { foreignKey: 'PlayerId' });
+ArenaReview.belongsTo(Player, { foreignKey: 'PlayerId' });
+
 
 module.exports = {
     sequelize,
@@ -173,5 +182,6 @@ module.exports = {
     Tournament,
     TournamentRegistration,
     TournamentParticipant,
-    WhatsAppLog
+    WhatsAppLog,
+    ArenaReview
 };

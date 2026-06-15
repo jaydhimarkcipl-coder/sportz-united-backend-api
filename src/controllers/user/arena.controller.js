@@ -57,6 +57,28 @@ class ArenaController {
             next(error);
         }
     }
+
+    async getArenaReviews(req, res, next) {
+        try {
+            const { arenaId } = req.params;
+            const reviews = await arenaService.getArenaReviews(arenaId);
+            res.status(200).json({ success: true, data: reviews });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async addArenaReview(req, res, next) {
+        try {
+            const { arenaId } = req.params;
+            const { rating, reviewText } = req.body;
+            const playerId = req.user.id; 
+            const review = await arenaService.addArenaReview(arenaId, playerId, rating, reviewText);
+            res.status(201).json({ success: true, message: 'Review added successfully', data: review });
+        } catch (error) {
+            next(error);
+        }
+    }
 }
 
 module.exports = new ArenaController();

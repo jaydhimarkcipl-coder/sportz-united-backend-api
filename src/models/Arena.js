@@ -50,10 +50,12 @@ const Arena = sequelize.define('Arena', {
         type: DataTypes.TIME
     },
     IsActive: {
-        type: DataTypes.BOOLEAN
+        type: DataTypes.BOOLEAN,
+        defaultValue: true
     },
     IsDelete: {
-        type: DataTypes.BOOLEAN
+        type: DataTypes.BOOLEAN,
+        defaultValue: false
     },
     CreatedDate: {
         type: DataTypes.DATE,

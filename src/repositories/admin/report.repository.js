@@ -129,7 +129,7 @@ class AdminReportRepository {
                         }],
                         attributes: ['CourtId', 'CourtName', 'ArenaId']
                     }],
-                    attributes: ['BookingId', 'BookingCode', 'BookingDate', 'StartTime', 'EndTime', 'TotalAmount', 'DiscountAmount', 'GSTAmount', 'NetAmount', 'Status']
+                    attributes: ['BookingId', 'BookingCode', 'BookingDate', 'StartTime', 'EndTime', 'TotalAmount', 'DiscountAmount', 'GSTAmount', 'NetAmount', 'Status', 'CreatedDate']
                 },
                 {
                     model: Player,
@@ -144,12 +144,25 @@ class AdminReportRepository {
             distinct: true
         });
 
+        const mappedRows = rows.map(r => {
+            const row = r.toJSON();
+            if (row.CreatedDate) {
+                const iso = row.CreatedDate instanceof Date ? row.CreatedDate.toISOString() : String(row.CreatedDate);
+                row.CreatedDate = iso.replace('Z', '+05:30');
+            }
+            if (row.Booking && row.Booking.CreatedDate) {
+                const isoB = row.Booking.CreatedDate instanceof Date ? row.Booking.CreatedDate.toISOString() : String(row.Booking.CreatedDate);
+                row.Booking.CreatedDate = isoB.replace('Z', '+05:30');
+            }
+            return row;
+        });
+
         return {
             totalTransactions: count,
             totalPages: Math.ceil(count / limitNum),
             currentPage: pageNum,
             limit: limitNum,
-            transactions: rows
+            transactions: mappedRows
         };
     }
 
@@ -277,6 +290,15 @@ class AdminReportRepository {
             distinct: true
         });
 
+        const mappedRows = rows.map(r => {
+            const row = r.toJSON();
+            if (row.CreatedDate) {
+                const iso = row.CreatedDate instanceof Date ? row.CreatedDate.toISOString() : String(row.CreatedDate);
+                row.CreatedDate = iso.replace('Z', '+05:30');
+            }
+            return row;
+        });
+
         return {
             totalBookings: count,
             grossAmount: Number.isFinite(grossAmount) ? grossAmount : 0,
@@ -284,7 +306,7 @@ class AdminReportRepository {
             totalPages: Math.ceil(count / limitNum),
             currentPage: pageNum,
             limit: limitNum,
-            bookings: rows
+            bookings: mappedRows
         };
     }
 }

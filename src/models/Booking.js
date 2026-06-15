@@ -42,6 +42,10 @@ const Booking = sequelize.define('Booking', {
     },
     Duration: {
         type: DataTypes.INTEGER
+    },
+    CreatedDate: {
+        type: DataTypes.DATE,
+        defaultValue: sequelize.literal('GETDATE()')
     }
 }, {
     tableName: 'tblBooking',

@@ -104,6 +104,11 @@ class BookingRepository {
         if (json.StartTime) json.StartTime = formatTimeToHHMMSS(json.StartTime);
         if (json.EndTime) json.EndTime = formatTimeToHHMMSS(json.EndTime);
 
+        if (json.CreatedDate) {
+            const iso = json.CreatedDate instanceof Date ? json.CreatedDate.toISOString() : String(json.CreatedDate);
+            json.CreatedDate = iso.replace('Z', '+05:30');
+        }
+
         return json;
     }
 

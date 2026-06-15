@@ -80,6 +80,12 @@ class AdminBookingRepository {
                 row.BookingSource = isOffline ? 'Turf / Offline' : 'Online / App';
                 row.PaymentMethod = txMethod;
                 row.PaymentStatus = txStatus;
+                
+                if (row.CreatedDate) {
+                    const iso = row.CreatedDate instanceof Date ? row.CreatedDate.toISOString() : String(row.CreatedDate);
+                    row.CreatedDate = iso.replace('Z', '+05:30');
+                }
+                
                 return row;
             });
             return {
@@ -110,6 +116,12 @@ class AdminBookingRepository {
             row.BookingSource = isOffline ? 'Turf / Offline' : 'Online / App';
             row.PaymentMethod = txMethod;
             row.PaymentStatus = txStatus;
+            
+            if (row.CreatedDate) {
+                const iso = row.CreatedDate instanceof Date ? row.CreatedDate.toISOString() : String(row.CreatedDate);
+                row.CreatedDate = iso.replace('Z', '+05:30');
+            }
+
             return row;
         });
 
@@ -161,6 +173,11 @@ class AdminBookingRepository {
         row.BookingSource = isOffline ? 'Turf / Offline' : 'Online / App';
         row.PaymentMethod = txMethod;
         row.PaymentStatus = txStatus;
+        
+        if (row.CreatedDate) {
+            const iso = row.CreatedDate instanceof Date ? row.CreatedDate.toISOString() : String(row.CreatedDate);
+            row.CreatedDate = iso.replace('Z', '+05:30');
+        }
 
         return row;
     }

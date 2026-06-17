@@ -2,7 +2,6 @@ const cron = require('node-cron');
 const { Booking, Player, Court, Arena, UserDevice, sequelize } = require('../models');
 const { Op } = require('sequelize');
 const fcmUtil = require('../utils/fcm.util');
-const smsUtil = require('../utils/sms.util');
 
 const startNotificationJobs = () => {
     // Run every minute
@@ -73,18 +72,6 @@ const startNotificationJobs = () => {
                         console.error(`[CRON] FCM Error for BookingId: ${booking.BookingId}`, fcmErr.message);
                     }
                 }
-                
-                // Send SMS via SmartPing like OTP
-                if (booking.Player.Phone) {
-                    try {
-                        console.log(`[CRON] Sending 40-min DYNAMIC SMS for BookingId: ${booking.BookingId}`);
-                        await smsUtil.sendSms(booking.Player.Phone, 'reminder', {
-                            arenaName: booking.Court?.Arena?.Name || 'the turf'
-                        });
-                    } catch (smsErr) {
-                        console.error(`[CRON] DYNAMIC SMS Error for BookingId: ${booking.BookingId}`, smsErr);
-                    }
-                }
             }
 
             // 2. Concluded Bookings (15 mins after EndTime)
@@ -122,17 +109,6 @@ const startNotificationJobs = () => {
                         });
                     } catch (fcmErr) {
                         console.error(`[CRON] FCM Error for BookingId: ${booking.BookingId}`, fcmErr.message);
-                    }
-                }
-
-                // Send SMS via SmartPing like OTP
-                if (booking.Player.Phone) {
-                    try {
-                        await smsUtil.sendSms(booking.Player.Phone, 'post_match', {
-                            arenaName: booking.Court?.Arena?.Name || 'the turf'
-                        });
-                    } catch (smsErr) {
-                        console.error(`[CRON] SMS Error for BookingId: ${booking.BookingId}`, smsErr);
                     }
                 }
             }

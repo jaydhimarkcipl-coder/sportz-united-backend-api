@@ -15,6 +15,14 @@ class SmsUtil {
             otp: {
                 dltContentId: '1707177080002286553',
                 message: (otp) => `${otp} is the OTP for verification. This OTP is valid for 10 minutes. Please do not share it with anyone. Team Uniserve`
+            },
+            reminder: {
+                dltContentId: '1707177080002286553', // Placeholder - must replace with approved DLT ID
+                message: (data) => `Reminder: Your booking at ${data.arenaName} starts in 40 minutes. Get ready! Team Uniserve` 
+            },
+            post_match: {
+                dltContentId: '1707177080002286553', // Placeholder - must replace with approved DLT ID
+                message: (data) => `We hope you enjoyed your time at ${data.arenaName}. Please leave a review! Team Uniserve` 
             }
         };
     }
@@ -26,7 +34,12 @@ class SmsUtil {
                 throw new Error(`Template ${templateKey} not found`);
             }
 
-            const text = template.message(templateData.otp || '');
+            let text = '';
+            if (templateKey === 'otp') {
+                text = template.message(templateData.otp || '');
+            } else {
+                text = template.message(templateData);
+            }
             const phone = to.startsWith('91') ? to : `91${to}`;
 
             const params = new URLSearchParams({

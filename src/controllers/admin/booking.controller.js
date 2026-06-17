@@ -77,6 +77,18 @@ class AdminBookingController {
             next(error);
         }
     }
+    async checkIn(req, res, next) {
+        try {
+            const { bookingId } = req.body;
+            if (!bookingId) {
+                return res.status(400).json({ success: false, message: 'bookingId is required' });
+            }
+            const result = await adminBookingService.checkInBooking(bookingId, req.ownedArenaIds);
+            res.status(200).json({ success: true, message: 'successfully checked in', data: result });
+        } catch (error) {
+            next(error);
+        }
+    }
 }
 
 module.exports = new AdminBookingController();

@@ -38,7 +38,7 @@ class BookingRepository {
         await BookingDetail.bulkCreate(bookingDetails, { transaction });
 
         // --- QR Code Generation ---
-        const qrContent = booking.BookingCode;
+        const qrContent = booking.BookingCode || String(booking.BookingId);
         const qrDir = path.join(__dirname, '../../../uploads/qrcodes');
         if (!fs.existsSync(qrDir)) {
             fs.mkdirSync(qrDir, { recursive: true });

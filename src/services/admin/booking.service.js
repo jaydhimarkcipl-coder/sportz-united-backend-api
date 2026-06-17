@@ -158,7 +158,7 @@ class AdminBookingService {
         const courtRepo = require('../../repositories/user/court.repository');
         const { Arena } = require('../../models');
 
-        const { fullName, phone, email, courtId, slotIds, bookingDate, paymentMethod, playerId } = data;
+        const { fullName, phone, email, courtId, slotIds, bookingDate, paymentMethod, playerId, amount } = data;
 
         // 1. Ownership Validation
         const court = await courtRepo.findCourtById(courtId);
@@ -198,7 +198,8 @@ class AdminBookingService {
             courtId,
             slotIds,
             bookingDate,
-            paymentMethod
+            paymentMethod,
+            amount
         );
 
         // 4. Generate Invitation Text
@@ -222,6 +223,53 @@ class AdminBookingService {
             },
             invitationText
         };
+    }
+
+    async checkInBooking(bookingId, ownedArenaIds) {
+        const booking = await this.getBookingById(bookingId, ownedArenaIds);
+        
+        if (booking.Status === 'Completed' || booking.Status === 'CheckedIn') {
+            throw { statusCode: 400, message: 'Booking is already checked in' };
+        }
+        if (['Cancelled', 'Refunded', 'no-show'].includes(booking.Status)) {
+            throw { statusCode: 400, message: `Cannot check in a ${booking.Status} booking` };
+        }
+
+        const { formatTimeToHHMMSS } = require('../../utils/time.util');
+        
+        let bookingDateStr = booking.BookingDate;
+        if (bookingDateStr instanceof Date) {
+            bookingDateStr = formatDate(bookingDateStr);
+        } else if (typeof bookingDateStr === 'string' && bookingDateStr.includes('T')) {
+            bookingDateStr = bookingDateStr.split('T')[0];
+        }
+        
+        let formattedStartTime = formatTimeToHHMMSS(booking.StartTime);
+        let formattedEndTime = formatTimeToHHMMSS(booking.EndTime);
+        
+        const startTimeStr = formattedStartTime.split(':').length === 2 ? `${formattedStartTime}:00` : formattedStartTime;
+        const endTimeStr = formattedEndTime.split(':').length === 2 ? `${formattedEndTime}:00` : formattedEndTime;
+        
+        // Assuming IST +05:30 based on local time
+        const startDateTime = new Date(`${bookingDateStr}T${startTimeStr}+05:30`);
+        const endDateTime = new Date(`${bookingDateStr}T${endTimeStr}+05:30`);
+        
+        const now = new Date();
+
+        // Allow check in 60 mins before start
+        const allowedStart = new Date(startDateTime.getTime() - 60 * 60000);
+        
+        if (now < allowedStart) {
+            throw { statusCode: 400, message: 'Too early to check in for this booking.' };
+        }
+        if (now > endDateTime) {
+            throw { statusCode: 400, message: 'Booking time has already passed.' };
+        }
+
+        await adminBookingRepo.updateBooking(bookingId, { Status: 'Completed' });
+        
+        booking.Status = 'Completed';
+        return booking;
     }
 }
 

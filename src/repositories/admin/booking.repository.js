@@ -137,8 +137,22 @@ class AdminBookingRepository {
     async findBookingById(bookingId, filters = {}) {
         const { Transaction } = require('../../models');
         const courtWhere = filters.courtWhere || {};
+        const bookingIdStr = String(bookingId);
+        const parsedId = parseInt(bookingId, 10);
+        
+        const conditions = [
+            { BookingCode: bookingIdStr },
+            { BookingCode: `BKG-${bookingIdStr}` }
+        ];
+
+        if (!isNaN(parsedId)) {
+            conditions.push({ BookingId: parsedId });
+        }
+
+        const whereClause = { [Op.or]: conditions };
+            
         const booking = await Booking.findOne({
-            where: { BookingId: bookingId },
+            where: whereClause,
             include: [
                 {
                     model: Court,

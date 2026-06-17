@@ -67,7 +67,8 @@ const offlineBookingSchema = Joi.object({
     courtId: Joi.number().integer().required(),
     slotIds: Joi.array().items(Joi.number().integer()).min(1).required(),
     bookingDate: Joi.date().iso().required(),
-    paymentMethod: Joi.string().valid('Cash', 'Offline', 'Wallet', 'ArenaWallet').required()
+    paymentMethod: Joi.string().valid('Cash', 'Offline', 'Wallet', 'ArenaWallet').required(),
+    amount: Joi.number().min(0).optional()
 });
 
 /**
@@ -174,5 +175,33 @@ router.patch('/:id/status', validate(statusSchema), adminBookingController.updat
  *         description: Cancelled
  */
 router.patch('/:id/cancel', adminBookingController.cancelBooking);
+
+/**
+ * @swagger
+ * /admin/bookings/check-in:
+ *   post:
+ *     summary: Check-in a booking using scanned booking ID
+ *     tags: [Admin Bookings]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [bookingId]
+ *             properties:
+ *               bookingId:
+ *                 type: integer
+ *     responses:
+ *       200:
+ *         description: Successfully checked in
+ *       400:
+ *         description: Not the right time to check in, or already checked in
+ *       404:
+ *         description: Booking not found
+ */
+router.post('/check-in', adminBookingController.checkIn);
 
 module.exports = router;

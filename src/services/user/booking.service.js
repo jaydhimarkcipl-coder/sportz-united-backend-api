@@ -8,7 +8,7 @@ const { Player, Arena, User } = require('../../models');
 const { formatTimeToHHMMSS } = require('../../utils/time.util');
 
 class BookingService {
-    async createBooking(playerId, courtId, slotIds, bookingDate, paymentMethod) {
+    async createBooking(playerId, courtId, slotIds, bookingDate, paymentMethod, amountPaidOverride) {
         if (!slotIds || slotIds.length === 0) {
             throw { statusCode: 400, message: "No slots selected for booking" };
         }
@@ -60,6 +60,24 @@ class BookingService {
             const courtData = await courtRepo.findCourtById(courtId, transaction);
             const arenaId = courtData ? courtData.ArenaId : null;
 
+            // Determine NetAmount and DiscountAmount
+            let netAmount = totalAmount;
+            let discountAmount = 0;
+            
+            if (amountPaidOverride !== undefined && amountPaidOverride !== null) {
+                const paid = parseFloat(amountPaidOverride);
+                if (!isNaN(paid) && paid >= 0) {
+                    netAmount = paid;
+                    totalAmount = paid; // Forget about discount, treat the overridden amount as the new TotalAmount
+                    
+                    // Distribute the overridden amount proportionally or equally among slots
+                    if (detailsData.length > 0) {
+                        const amountPerSlot = paid / detailsData.length;
+                        detailsData.forEach(detail => detail.Amount = amountPerSlot);
+                    }
+                }
+            }
+
             // 3. Insert main booking
             const bookingData = {
                 BookingCode: `BKG-${Date.now()}`,
@@ -69,7 +87,8 @@ class BookingService {
                 StartTime: overallStartTime,
                 EndTime: overallEndTime,
                 TotalAmount: totalAmount,
-                NetAmount: totalAmount,
+                DiscountAmount: discountAmount || null,
+                NetAmount: netAmount,
                 Status: 'Confirmed',
                 Duration: slots.reduce((acc, s) => acc + (s.DurationMin || 0), 0)
             };
@@ -80,7 +99,7 @@ class BookingService {
             await paymentService.processPayment({
                 BookingId: booking.BookingId,
                 PlayerId: playerId,
-                Amount: totalAmount,
+                Amount: netAmount,
                 PaymentMethod: paymentMethod,
                 ArenaId: arenaId,
                 TransactionId: `TXN-${Date.now()}`

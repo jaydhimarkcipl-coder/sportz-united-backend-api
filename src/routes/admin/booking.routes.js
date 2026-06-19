@@ -71,6 +71,13 @@ const offlineBookingSchema = Joi.object({
     amount: Joi.number().min(0).optional()
 });
 
+const slotDetailsSchema = Joi.object({
+    date: Joi.string().required(),
+    slotTime: Joi.string().required(),
+    sportId: Joi.number().integer().optional(),
+    courtId: Joi.number().integer().required()
+});
+
 /**
  * @swagger
  * /admin/bookings/manual:
@@ -203,5 +210,35 @@ router.patch('/:id/cancel', adminBookingController.cancelBooking);
  *         description: Booking not found
  */
 router.post('/check-in', adminBookingController.checkIn);
+
+/**
+ * @swagger
+ * /admin/bookings/slot-details:
+ *   post:
+ *     summary: Get booking details for a specific slot
+ *     tags: [Admin Bookings]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [date, slotTime, courtId]
+ *             properties:
+ *               date:
+ *                 type: string
+ *               slotTime:
+ *                 type: string
+ *               sportId:
+ *                 type: integer
+ *               courtId:
+ *                 type: integer
+ *     responses:
+ *       200:
+ *         description: Success
+ */
+router.post('/slot-details', validate(slotDetailsSchema), adminBookingController.getSlotDetails);
 
 module.exports = router;

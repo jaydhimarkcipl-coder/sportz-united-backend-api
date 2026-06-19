@@ -71,6 +71,7 @@ class AdminBookingController {
     async getOfflineBookings(req, res, next) {
         try {
             const query = { ...req.query, type: 'offline' };
+
             const result = await adminBookingService.getAllBookings(req.ownedArenaIds, query);
             res.status(200).json({ success: true, data: result });
         } catch (error) {
@@ -85,6 +86,15 @@ class AdminBookingController {
             }
             const result = await adminBookingService.checkInBooking(bookingId, req.ownedArenaIds);
             res.status(200).json({ success: true, message: 'successfully checked in', data: result });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async getSlotDetails(req, res, next) {
+        try {
+            const result = await adminBookingService.getSlotDetails(req.body, req.ownedArenaIds);
+            res.status(200).json({ success: true, data: result });
         } catch (error) {
             next(error);
         }

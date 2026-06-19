@@ -271,6 +271,70 @@ class AdminBookingService {
         booking.Status = 'Completed';
         return booking;
     }
+
+    async getSlotDetails(payload, ownedArenaIds) {
+        const { date, slotTime, sportId, courtId } = payload;
+        const { Booking, BookingDetail, Court, Player, Transaction } = require('../../models');
+        
+        const timeParts = slotTime.split(':');
+        let formattedTime = slotTime;
+        if (timeParts.length === 2) {
+            formattedTime = `${slotTime}:00`;
+        }
+
+        const courtWhere = { CourtId: courtId };
+        if (ownedArenaIds) {
+            courtWhere.ArenaId = ownedArenaIds;
+        }
+        if (sportId) {
+            courtWhere.SportId = sportId;
+        }
+
+        const booking = await Booking.findOne({
+            where: {
+                BookingDate: date,
+                Status: { [Op.notIn]: ['Cancelled', 'Refunded'] }
+            },
+            include: [
+                {
+                    model: Court,
+                    as: 'Court',
+                    where: courtWhere,
+                    required: true
+                },
+                {
+                    model: BookingDetail,
+                    where: { 
+                        StartTime: { [Op.lte]: formattedTime },
+                        EndTime: { [Op.gt]: formattedTime }
+                    },
+                    required: true
+                },
+                {
+                    model: Player,
+                    as: 'Player',
+                    required: false
+                },
+                {
+                    model: Transaction,
+                    required: false
+                }
+            ]
+        });
+        
+        if (!booking) {
+            return null;
+        }
+        
+        const transactions = booking.Transactions || [];
+        const txMethod = transactions.length > 0 ? transactions[0].PaymentMethod : 'Unknown';
+        
+        return {
+            bookedBy: booking.Player ? booking.Player.FullName : 'Unknown',
+            bookedOn: booking.CreatedDate,
+            paymentMode: txMethod
+        };
+    }
 }
 
 module.exports = new AdminBookingService();

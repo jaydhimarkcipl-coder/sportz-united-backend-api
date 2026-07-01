@@ -11,6 +11,7 @@ class AdminBookingController {
         }
     }
 
+    // Fetch booking by numeric ID or BookingCode (e.g., BKG-12345)
     async getBookingById(req, res, next) {
         try {
             const result = await adminBookingService.getBookingById(req.params.id, req.ownedArenaIds);
@@ -20,16 +21,27 @@ class AdminBookingController {
         }
     }
 
-    async updateStatus(req, res, next) {
+    // Fetch booking by BookingCode (e.g., BKG-1782724700123)
+    async getBookingByCode(req, res, next) {
         try {
-            const { status } = req.body;
-            const result = await adminBookingService.updateBookingStatus(req.params.id, status, req.ownedArenaIds);
-            res.status(200).json({ success: true, ...result });
+            const bookingCode = req.params.bookingCode;
+            const result = await adminBookingService.getBookingById(bookingCode, req.ownedArenaIds);
+            res.status(200).json({ success: true, data: result });
         } catch (error) {
             next(error);
         }
     }
 
+    async updateStatus(req, res, next) {
+        try {
+            const { status } = req.body;
+            const bookingId = req.params.id;
+            const result = await adminBookingService.updateBookingStatus(bookingId, status, req.ownedArenaIds);
+            res.status(200).json({ success: true, ...result });
+        } catch (error) {
+            next(error);
+        }
+    }
     async cancelBooking(req, res, next) {
         try {
             const result = await adminBookingService.cancelBookingWithRefund(req.params.id, req.ownedArenaIds);
@@ -71,13 +83,13 @@ class AdminBookingController {
     async getOfflineBookings(req, res, next) {
         try {
             const query = { ...req.query, type: 'offline' };
-
             const result = await adminBookingService.getAllBookings(req.ownedArenaIds, query);
             res.status(200).json({ success: true, data: result });
         } catch (error) {
             next(error);
         }
     }
+
     async checkIn(req, res, next) {
         try {
             const { bookingId } = req.body;

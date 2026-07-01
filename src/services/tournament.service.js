@@ -18,7 +18,7 @@ const getFullUrl = (path) => {
     if (path.startsWith('http')) return path;
     // Remove leading slash if present
     const cleanPath = path.startsWith('/') ? path.slice(1) : path;
-    const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+    const baseUrl = process.env.BASE_URL || 'https://api.sportzunited.com';
     return `${baseUrl}/${cleanPath}`;
 };
 
@@ -38,7 +38,7 @@ const fixRegistrationFormat = (tournament) => {
             });
             tournament.RegistrationFormat = JSON.stringify(temp);
         }
-    } catch(e) {}
+    } catch (e) { }
     return tournament;
 };
 
@@ -97,15 +97,15 @@ class TournamentService {
 
     async getTournaments(filters = {}, userId = null) {
         const tournaments = await tournamentRepo.findAllTournaments(filters);
-        
+
         if (userId) {
             const registrations = await TournamentRegistration.findAll({
                 where: { PlayerId: userId, Status: { [Op.ne]: 'Cancelled' } },
                 attributes: ['TournamentId']
             });
-            
+
             const registeredTournamentIds = new Set(registrations.map(r => r.TournamentId));
-            
+
             return tournaments.map(t => {
                 const tournament = t.toJSON();
                 tournament.IsRegistered = registeredTournamentIds.has(tournament.TournamentId);
@@ -114,7 +114,7 @@ class TournamentService {
                 return fixRegistrationFormat(tournament);
             });
         }
-        
+
         return tournaments.map(t => {
             const tournament = t.toJSON();
             tournament.BannerUrl = getFullUrl(tournament.BannerUrl);
@@ -136,7 +136,7 @@ class TournamentService {
 
     async registerForTournament(tournamentId, registrantId, registrationData) {
         const { players } = registrationData;
-        
+
         if (!players || !Array.isArray(players) || players.length === 0) {
             throw { statusCode: 400, message: 'At least one player is required for registration' };
         }
@@ -185,7 +185,7 @@ class TournamentService {
             // 2. Prepare and create participants
             const participantsData = players.map(p => {
                 let photoUrl = p.photoPath || null;
-                
+
                 // Handle Base64 photo if no file path provided
                 if (!photoUrl && isBase64Image(p.photo)) {
                     photoUrl = saveBase64Image(p.photo, 'player-photo');
@@ -207,7 +207,7 @@ class TournamentService {
             await tournamentRepo.createParticipants(participantsData, t);
 
             await t.commit();
-            
+
             // 3. Send WhatsApp Notifications (Async, don't wait)
             try {
                 const startDate = new Date(tournament.StartDate).toLocaleDateString('en-GB'); // DD/MM/YYYY
@@ -281,7 +281,7 @@ class TournamentService {
         if (updateData.EndDate) updateData.EndDate = formatForMSSQL(updateData.EndDate);
         if (updateData.RegistrationStartDate) updateData.RegistrationStartDate = formatForMSSQL(updateData.RegistrationStartDate);
         if (updateData.RegistrationEndDate) updateData.RegistrationEndDate = formatForMSSQL(updateData.RegistrationEndDate);
-        
+
         updateData.ModifiedBy = userId;
         updateData.ModifiedDate = formatForMSSQL(new Date());
 
@@ -347,7 +347,7 @@ class TournamentService {
 
         const regData = registration.toJSON();
         const tournament = regData.Tournament || {};
-               const sport = tournament.Sport || {};
+        const sport = tournament.Sport || {};
         const sportDetails = { ...sport };
         if (sportDetails.NoOfPerson) {
             sportDetails.NoOfPerson = Math.floor(sportDetails.NoOfPerson / 2);

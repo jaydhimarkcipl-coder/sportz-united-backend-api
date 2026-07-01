@@ -57,6 +57,42 @@ router.get('/', adminBookingController.getBookings);
  *       200:
  *         description: Success
  */
+/**
+ * @swagger
+ * /admin/bookings/code/{bookingCode}:
+ *   get:
+ *     summary: View booking by BookingCode (e.g., BKG-12345)
+ *     tags: [Admin Bookings]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: bookingCode
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: Success
+ */
+router.get('/code/:bookingCode', adminBookingController.getBookingByCode);
+
+/**
+ * @swagger
+ * /admin/bookings/{id}:
+ *   get:
+ *     summary: View specific booking details
+ *     tags: [Admin Bookings]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     responses:
+ *       200:
+ *         description: Success
+ */
 router.get('/:id', adminBookingController.getBookingById);
 
 const offlineBookingSchema = Joi.object({

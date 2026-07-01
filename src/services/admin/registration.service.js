@@ -7,7 +7,7 @@ const getFullUrl = (path) => {
     if (!path) return null;
     if (path.startsWith('http')) return path;
     const cleanPath = path.startsWith('/') ? path.slice(1) : path;
-    const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+    const baseUrl = process.env.BASE_URL || 'https://api.sportzunited.com';
     return `${baseUrl}/${cleanPath}`;
 };
 
@@ -19,11 +19,11 @@ class RegistrationService {
         if (tournamentId) {
             whereClause.TournamentId = tournamentId;
         }
-        
+
         if (status) {
             whereClause.Status = status;
         }
-        
+
         if (startDate && endDate) {
             whereClause.RegistrationDate = {
                 [Op.between]: [new Date(startDate), new Date(endDate)]
@@ -78,7 +78,7 @@ class RegistrationService {
             include: includeClause,
             order: [['RegistrationId', 'DESC']]
         });
-        
+
         if (!registrations || registrations.length === 0) {
             throw { statusCode: 404, message: 'No registrations found matching the criteria' };
         }
@@ -107,7 +107,7 @@ class RegistrationService {
         registrations.forEach(reg => {
             const regData = reg.toJSON();
             const participants = regData.Participants || [];
-            
+
             if (participants.length === 0) {
                 worksheet.addRow({
                     regId: regData.RegistrationId,

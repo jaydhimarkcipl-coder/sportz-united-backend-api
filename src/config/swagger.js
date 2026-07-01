@@ -23,6 +23,10 @@ const options = {
         description: 'Internal  server',
       },
       {
+        url: 'http://192.168.1.17:3000/api',
+        description: 'Internal  server',
+      },
+      {
         url: 'https://api.sportzunited.com/api',
         description: 'Production server',
       },

@@ -5,12 +5,12 @@
 const getFullUrl = (path) => {
     if (!path) return null;
     if (path.startsWith('http')) return path;
-    
+
     // Ensure BASE_URL exists and doesn't end with a slash, 
     // and path starts with a slash.
-    const baseUrl = (process.env.BASE_URL || 'http://localhost:3000').replace(/\/$/, '');
+    const baseUrl = (process.env.BASE_URL || 'https://api.sportzunited.com').replace(/\/$/, '');
     const relativePath = path.startsWith('/') ? path : `/${path}`;
-    
+
     return `${baseUrl}${relativePath}`;
 };
 
